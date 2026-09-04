@@ -1212,7 +1212,8 @@
       // pairs, coloring breakage and other editors highlightning problems.
       //
 
-      var // non-ascii chars
+      var parenthesized,
+        // non-ascii chars
         noascii = '[^\\x00-\\x9f]',
         // unicode chars
         unicode = '\\\\[0-9a-fA-F]{1,6}',
@@ -1348,6 +1349,15 @@
       // deepest localName in selector strings and then
       // use it to retrieve all possible matching nodes
       // that will be filtered by compiled resolvers
+      // The parenthesized part has to tolerate nesting. Written as
+      // '\x28[^\x29]+' it stops at the first ')', so a final compound
+      // holding a nested functional pseudo-class matches nothing at all, and
+      // a selector the optimizer cannot read is answered by testing every
+      // element in the context instead of the elements of one tag or class.
+      parenthesized = '\\x28[^\\x28\\x29]*(?:\\x29|$)'
+      parenthesized = '\\x28(?:[^\\x28\\x29]|' + parenthesized + ')*(?:\\x29|$)'
+      parenthesized = '\\x28(?:[^\\x28\\x29]|' + parenthesized + ')*(?:\\x29|$)'
+
       reOptimizer = RegExp(
         '(?:([.:#*]?)' +
           '(' +
@@ -1356,7 +1366,7 @@
           '(?:' +
           ':[-\\w]+|' +
           '\\[[^\\]]+(?:\\]|$)|' +
-          '\\x28[^\\x29]+(?:\\x29|$)' +
+          parenthesized +
           ')*)$',
       )
 
