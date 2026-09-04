@@ -2177,7 +2177,7 @@
                     'if(((' +
                     '(/^form$/i.test(e.localName)&&!e.noValidate)||' +
                     '(e.willValidate&&!e.formNoValidate))&&e.checkValidity())||' +
-                    '(/^fieldset$/i.test(e.localName)&&s.first(":valid",e))' +
+                    '(/^fieldset$/i.test(e.localName)&&!s.first(":invalid",e))' +
                     '){' +
                     source +
                     '}'
