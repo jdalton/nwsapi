@@ -21,6 +21,9 @@
 
   if (typeof module == 'object' && typeof exports == 'object') {
     module.exports = factory;
+    Object.defineProperty(module.exports, 'DOMSelector', {
+      get: function() { return require('./dom-selector.js'); }
+    });
   } else if (typeof define == 'function' && define['amd']) {
     define(factory);
   } else {
