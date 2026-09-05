@@ -7,6 +7,7 @@ export function toolingFiles() {
       'src/**/*.mts',
       'scripts/**/*.mts',
       'test/*.test.mts',
+      'test/node/**/*.mts',
       'test/jsdom-adapter-package.mts',
       'test/upstream/*.mts',
       '.config/*.mts',
