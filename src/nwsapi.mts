@@ -110,6 +110,7 @@
       pseudo_dbl:
         ':(after|before|first\\-letter|first\\-line|selection|placeholder|-webkit-[-a-zA-Z0-9]{2,})\\b',
     },
+    HAS_ANCHOR = ':-nwsapi-anchor',
     Patterns: Record<string, RegExp> = {
       // pseudo-classes
       treestruct: RegExp('^:(?:' + GROUPS.treestruct + ')(.*)', 'i'),
@@ -123,6 +124,7 @@
       time_state: RegExp('^:(?:' + GROUPS.time_state + ')(.*)', 'i'),
       locationpc: RegExp('^:(?:' + GROUPS.locationpc + ')(.*)', 'i'),
       logicalsel: RegExp('^:(?:' + GROUPS.logicalsel + ')(.*)', 'i'),
+      has_anchor: RegExp('^:(?:' + HAS_ANCHOR.slice(1) + ')\\b(.*)', 'i'),
       pseudo_sng: RegExp('^:(?:' + GROUPS.pseudo_sng + ')(.*)', 'i'),
       pseudo_dbl: RegExp('^:(?:' + GROUPS.pseudo_dbl + ')(.*)', 'i'),
       // combinator symbols
@@ -1855,7 +1857,9 @@
             // :is( s1, [ s2, ... ]), :not( s1, [ s2, ... ]),
             // :has( s1, [ s2, ... ]) no nesting is allowed for
             // :where( s1, [ s2, ... ]), :matches( s1, [ s2, ... ]),
-            else if ((match = matchLogical(selector))) {
+            else if ((match = selector.match(Patterns.has_anchor))) {
+              source = 'if(e===s.anchor){' + source + '}'
+            } else if ((match = matchLogical(selector))) {
               match[1] = match[1].toLowerCase()
               expr = match[2].replace(/\x22/g, '\\"')
               switch (match[1]) {
@@ -1879,36 +1883,12 @@
                   source = 'if(!s.match("' + expr + '",e)){' + source + '}'
                   break
                 case 'has':
-                  if (expr == ':scope') {
-                    source = 'if(s.has("' + expr + '",e)){' + source + '}'
-                    break
-                  }
-
-                  // combinators having mangled context
-                  switch (expr.charAt(0)) {
-                    case '+':
-                      source =
-                        'if(e.parentElement&&s.select("*' +
-                        expr +
-                        '",e.parentElement).includes(e.nextElementSibling)){' +
-                        source +
-                        '}'
-                      break
-                    case '~':
-                      source =
-                        'if(e.parentElement&&Array.from(e.parentElement.children).includes(e.nextElementSibling)){' +
-                        source +
-                        '}'
-                      break
-                    case '>':
-                      source =
-                        'if(s.first(":scope ' + expr + '",e)){' + source + '}'
-                      break
-                    default:
-                      source =
-                        'if(s.has(":scope ' + expr + '",e)){' + source + '}'
-                      break
-                  }
+                  source =
+                    'if(s.has(' +
+                    JSON.stringify(splitList(match[2])) +
+                    ',e)){' +
+                    source +
+                    '}'
                   break
                 default:
                   emit("'" + expression + "'" + qsInvalid)
@@ -2563,10 +2543,37 @@
       return false
     },
     // true if element matches the selector
-    has = function (selector, context, callback) {
-      return (
-        collect(parse(selector, true), context, callback).results.length > 0
-      )
+    has = function (list, anchor) {
+      var context,
+        found = false,
+        i = 0,
+        l = list.length,
+        previous = Snapshot.anchor
+      Snapshot.anchor = anchor
+      try {
+        for (; l > i; ++i) {
+          context = /^[+~]/.test(list[i]) ? anchor.parentElement : anchor
+          if (!list[i]) {
+            emit(qsInvalid)
+            return false
+          }
+          // Compile even a root sibling argument, whose candidate set is empty.
+          // Later invalid items must not be hidden by an earlier match.
+          if (
+            collect(
+              parse(HAS_ANCHOR + ' ' + list[i], true),
+              context || anchor,
+              undefined,
+            ).results.length &&
+            context
+          ) {
+            found = true
+          }
+        }
+        return found
+      } finally {
+        Snapshot.anchor = previous
+      }
     },
     // equivalent of w3c 'querySelector' method
     first = function _querySelector(selectors, context, callback) {
@@ -2889,6 +2896,7 @@
     selectResolvers = createCache(),
     // passed to resolvers
     Snapshot: {
+      anchor: Element | null
       HOVER?: EventTarget
       doc: Document
       from: Node
@@ -2917,6 +2925,7 @@
       doc: doc,
       from: doc,
       root: root,
+      anchor: null,
 
       byTag: byTag,
 
