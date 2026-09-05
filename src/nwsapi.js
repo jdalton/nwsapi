@@ -35,6 +35,7 @@
   doc = global.document,
   root = doc.documentElement,
   slice = Array.prototype.slice,
+  sliceCall = slice.call.bind(slice),
 
   // Factory fallback for documents without a window.
   ELEMENT_PROTO = global.Element && global.Element.prototype,
@@ -366,6 +367,9 @@
   switchContext =
     function(context, force) {
       var oldDoc = doc;
+      partCounts.clear();
+      matcherDoc = null;
+      matcherRecord = null;
       doc = context.ownerDocument || context;
       if (force || oldDoc !== doc) {
         // force a new check for each document change
@@ -385,6 +389,7 @@
         NAMESPACE = root && root.namespaceURI;
         Snapshot.doc = doc;
         Snapshot.root = root;
+        hoverWanted && trackHover();
       }
       return (Snapshot.from = context);
     },
@@ -534,6 +539,14 @@
     '.': (c, n) => (e, f) => byClass(n, c),
     },
 
+  // Fetch a cached plan's candidates without allocating lookup closures.
+  fetch = {
+    '#': (n, c) => byId(n, c),
+    '*': (n, c) => byTag(n, c),
+    '|': (n, c) => byTagNS(c, n),
+    '.': (n, c) => byClass(n, c)
+  },
+
   // find duplicate ids using iterative walk
   // Walk 'context' in tree order collecting elements carrying 'id'. The
   // walk can start at 'from', an element already known to be the first match.
@@ -624,7 +637,7 @@
       var e, nodes, api = method['*'];
       // DOCUMENT_NODE (9) & ELEMENT_NODE (1)
       if (api in context) {
-        nodes = slice.call(context[api](tag));
+        nodes = sliceCall(context[api](tag));
         return Config.LEGACY ? elementsOf(nodes) : nodes;
       } else if (Config.LEGACY) {
         // DOCUMENT_FRAGMENT_NODE (11) on a host without the element-only
@@ -642,7 +655,7 @@
         // DOCUMENT_FRAGMENT_NODE (11)
         if ((e = context.firstElementChild)) {
           if (!(e.nextElementSibling || tag == '*' || e.localName == tag)) {
-            return slice.call(e[api](tag));
+            return sliceCall(e[api](tag));
           } else {
             nodes = [ ];
             do {
@@ -667,7 +680,7 @@
       var value = e.className;
       if (typeof value == 'string') { return value; }
       if (value && typeof value.baseVal == 'string') { return value.baseVal; }
-      return e.getAttribute('class');
+      return attrOf(e, 'class');
     },
 
   // context agnostic getElementsByClassName
@@ -676,7 +689,7 @@
       var e, i, l, nodes, api = method['.'], reCls;
       // DOCUMENT_NODE (9) & ELEMENT_NODE (1)
       if (api in context) {
-        nodes = slice.call(context[api](cls));
+        nodes = sliceCall(context[api](cls));
         return Config.LEGACY ? elementsOf(nodes) : nodes;
       } else if (Config.LEGACY) {
         // A host from before this lookup existed. Every element under the
@@ -693,7 +706,7 @@
         if ((e = context.firstElementChild)) {
           reCls = RegExp('(^|\\s)' + cls + '(\\s|$)', QUIRKS_MODE ? 'i' : '');
           if (!(e.nextElementSibling || reCls.test(e.className))) {
-            return slice.call(e[api](cls));
+            return sliceCall(e[api](cls));
           } else {
             nodes = [ ];
             do {
@@ -968,16 +981,6 @@
         typeof root.localName != 'string');
     },
 
-  classOf =
-    function(e) {
-      var value = e.className;
-      if (typeof value == 'string') { return value; }
-      // an SVGAnimatedString carries the markup in baseVal, which is cheaper
-      // to read than asking for the attribute again
-      if (value && typeof value.baseVal == 'string') { return value.baseVal; }
-      return attrOf(e, 'class');
-    },
-
   H_USED = { },
 
   helper =
@@ -989,7 +992,7 @@
   readDirect = {
     tag: function(v) { return v + '.localName'; },
     id: function(v) { return v + '.id'; },
-    cls: function(v) { return v + '.getAttribute("class")'; },
+    cls: function(v) { return helper('hCls', 'classOf') + '(' + v + ')'; },
     up: function(v) { return v + '.parentElement'; },
     next: function(v) { return v + '.nextElementSibling'; },
     prev: function(v) { return v + '.previousElementSibling'; },
@@ -1000,7 +1003,7 @@
   readHelped = {
     tag: function(v) { return helper('hTag', 'tagOf') + '(' + v + ')'; },
     id: function(v) { return helper('hId', 'idOf') + '(' + v + ')'; },
-    cls: function(v) { return helper('hCls', 'classOf') + '(' + v + ')'; },
+    cls: function(v) { return helper('hCls', 'legacyClassOf') + '(' + v + ')'; },
     up: function(v) { return helper('hUp', 'upOf') + '(' + v + ')'; },
     next: function(v) { return helper('hNext', 'nextOf') + '(' + v + ')'; },
     prev: function(v) { return helper('hPrev', 'prevOf') + '(' + v + ')'; },
@@ -1011,7 +1014,7 @@
   helpReads =
     function(code) {
       var reads = {
-        localName: ['hTag', 'tagOf'], className: ['hCls', 'classOf'],
+        localName: ['hTag', 'tagOf'], className: ['hCls', 'legacyClassOf'],
         id: ['hId', 'idOf'], parentElement: ['hUp', 'upOf'],
         nextElementSibling: ['hNext', 'nextOf'],
         previousElementSibling: ['hPrev', 'prevOf'],
@@ -1194,6 +1197,33 @@
       return mask;
     },
 
+  FILTER_SAMPLE = 64,
+
+  FILTER_KEEP = 48,
+
+  FILTER_RETRY = 4096,
+
+  mayMatch =
+    function(node, mask, state) {
+      // switched off for this selector, and counting down to another look:
+      // a document can change shape between one query and the next
+      if (state.rest > 0) {
+        --state.rest;
+        return true;
+      }
+
+      var keep = (ancestorMask(node) & mask) === mask;
+
+      if (keep) { ++state.kept; }
+      if (++state.seen === FILTER_SAMPLE) {
+        if (state.kept >= FILTER_KEEP) { state.rest = FILTER_RETRY; }
+        state.seen = 0;
+        state.kept = 0;
+      }
+
+      return keep;
+    },
+
   clearAncestorMasks =
     function() {
       ancestorMasks.clear();
@@ -1221,11 +1251,13 @@
   // https://dom.spec.whatwg.org/#concept-element-defined
   isDefined =
     function(element) {
-      var custom, name = element.localName, registry, view;
+      var custom, name = tagOf(element), registry, view;
 
+      // the cheap half first: a name without a hyphen is only a candidate
+      // when the markup asked for a customized built-in
       if (name.indexOf('-') < 0) {
-        if (!element.hasAttribute('is')) { return true; }
-        name = element.getAttribute('is') || name;
+        if (!hasAttrOf(element, 'is')) { return true; }
+        name = attrOf(element, 'is') || name;
       }
 
       view = doc.defaultView;
@@ -1264,30 +1296,31 @@
   // https://html.spec.whatwg.org/#enabling-and-disabling-form-controls:-the-disabled-attribute
   isDisabled =
     function(element) {
-      var legend, name = element.localName, node;
+      var legend, name = tagOf(element), node;
 
+      // its own attribute, whatever kind of control it is
       if (element.disabled === true) { return true; }
 
       // an optgroup is disabled by its own attribute and nothing else; an
-      // option is also disabled by the optgroup it is a child of
+      // option is also disabled by the optgroup it is a child of, whose
+      // 'disabled' property reflects only that optgroup's own attribute
       if (name == 'optgroup') { return false; }
       if (name == 'option') {
-        node = element.parentElement;
-        return !!node && node.localName == 'optgroup' && node.disabled === true;
+        node = upOf(element);
+        return !!node && tagOf(node) == 'optgroup' && node.disabled === true;
       }
 
-      // any disabled fieldset above it, unless it sits in that fieldset's
-      // first legend child, which excuses that fieldset and no other
-      node = element.parentElement;
+      // Any disabled fieldset above it disables it, unless it sits inside
+      // that fieldset's first legend child. A legend only excuses the
+      // fieldset it belongs to, so the walk carries on past it.
+      node = upOf(element);
       while (node) {
-        if (node.localName == 'fieldset' && node.disabled === true) {
-          legend = node.firstElementChild;
-          while (legend && legend.localName != 'legend') {
-            legend = legend.nextElementSibling;
-          }
+        if (tagOf(node) == 'fieldset' && node.disabled === true) {
+          legend = firstOf(node);
+          while (legend && tagOf(legend) != 'legend') { legend = nextOf(legend); }
           if (!(legend && legend.contains(element))) { return true; }
         }
-        node = node.parentElement;
+        node = upOf(node);
       }
 
       return false;
@@ -1437,6 +1470,7 @@
       }
       // clear lambda cache
       if (clear) {
+        descentDeclined.clear();
         matchLambdas.clear();
         selectLambdas.clear();
         matchResolvers.clear();
@@ -1618,13 +1652,13 @@
 
   F_INIT = '"use strict";return function Resolver(c,f,x,r)',
 
-  S_HEAD = 'var e,n,o,j=r.length-1,k=-1',
+  S_HEAD = 'var e,n,o,j=r.length-1,k=-1,l=c.length',
   M_HEAD = 'var e,n,o',
-  N_HEAD = 'var e,n,o',
+  N_HEAD = 'var e,n,o,j=r.length-1,k=-1,l=c.length',
 
-  S_LOOP = 'main:while((e=c[++k]))',
+  S_LOOP = 'main:while(++k<l&&(e=c[k])!==undefined)',
   M_LOOP = 'e=c;',
-  N_LOOP = 'main:while((e=c.item(++k)))',
+  N_LOOP = 'main:while(++k<l&&(e=c.item(k))!==undefined)',
 
   S_BODY = 'r[++j]=c[k];',
   M_BODY = '',
@@ -1632,7 +1666,7 @@
 
   S_TAIL = 'continue main;',
   M_TAIL = 'r=true;',
-  N_TAIL = 'r=true;',
+  N_TAIL = 'continue main;',
 
   S_TEST = 'if(f(c[k])){break main;}',
   M_TEST = 'f(c);',
@@ -1653,7 +1687,8 @@
   // executable functions for matching or selecting
   compile =
     function(selector, mode, callback) {
-      var alias, factory, i, mask, head = '', loop = '', macro = '', source = '', vars = '';
+      var alias, factory, i, mask, filter, head = '', loop = '', macro = '', source = '', vars = '',
+      key = mode + ':' + !!callback + ':' + selector;
       H_USED = { };
 
       // 'mode' can be boolean or null
@@ -1661,19 +1696,19 @@
       // null to use collection.item()
       switch (mode) {
         case true:
-          if ((factory = selectLambdas.get(selector))) { return factory; }
+          if ((factory = selectLambdas.get(key)) !== undefined) { return factory; }
           macro = S_BODY + (callback ? S_TEST : '') + S_TAIL;
           head = S_HEAD;
           loop = S_LOOP;
           break;
         case false:
-          if ((factory = matchLambdas.get(selector))) { return factory; }
+          if ((factory = matchLambdas.get(key)) !== undefined) { return factory; }
           macro = M_BODY + (callback ? M_TEST : '') + M_TAIL;
           head = M_HEAD;
           loop = M_LOOP;
           break;
         case null:
-          if ((factory = selectLambdas.get(selector))) { return factory; }
+          if ((factory = selectLambdas.get(key)) !== undefined) { return factory; }
           macro = N_BODY + (callback ? N_TEST : '') + N_TAIL;
           head = N_HEAD;
           loop = N_LOOP;
@@ -1692,11 +1727,17 @@
       // per combinator whatever the depth, so there is nothing to save and
       // the lookup is a loss. Two required tags or more, so the cheap shapes
       // do not pay a Map lookup to learn what a single comparison tells them.
-      if ((mode || mode === null) && A_WALK && A_REQD.length > 1) {
+      if ((mode || mode === null) && A_WALK && A_REQD.length > 1 && !Config.LEGACY) {
         for (i = 0, mask = 0; A_REQD.length > i; ++i) {
           mask |= tagBit(A_REQD[i]);
         }
-        source = 'if((s.ancestorMask(e)&' + mask + ')==' + mask + '){' + source + '}';
+        filter = { seen: 0, kept: 0, rest: 0 };
+        source = 'if(s.mayMatch(e,' + mask + ',a)){' + source + '}';
+      }
+
+      if ((mode || mode === null) && !callback && source === macro) {
+        selectLambdas.set(key, null);
+        return null;
       }
 
       loop += mode || mode === null ? '{' + source + '}' : source;
@@ -1706,7 +1747,7 @@
       // alive, and an element that moves in the meantime would carry a
       // summary describing where it used to be.
       if (mask) {
-        loop += 's.clearAncestorMasks();';
+        loop = 'try{' + loop + '}finally{s.clearAncestorMasks();}';
       }
 
       if (mode || mode === null && selector.includes(':nth')) {
@@ -1723,24 +1764,47 @@
 
       for (alias in H_USED) { vars += ',' + alias + '=s.' + H_USED[alias]; }
 
-      factory = Function('s', F_INIT + '{' + head + vars + ';' + loop + 'return r;}')(Snapshot);
+      factory = Function('s', 'a', F_INIT + '{' + head + vars + ';' + loop + 'return r;}')(Snapshot, filter);
 
       if (mode || mode === null) {
-        selectLambdas.set(selector, factory);
+        selectLambdas.set(key, factory);
       } else {
-        matchLambdas.set(selector, factory);
+        matchLambdas.set(key, factory);
       }
 
       return factory;
     },
 
   // build conditional code to check components of selector strings
+  isCompound =
+    function(text) {
+      var chr, depth = 0, escaped, i = 0, l = text.length, quote = '';
+
+      for (; l > i; ++i) {
+        chr = text.charAt(i);
+        if (escaped) { escaped = false; continue; }
+        if (chr == '\\') { escaped = true; }
+        else if (quote) { if (chr == quote) { quote = ''; } }
+        else if (chr == '\x22' || chr == '\x27') { quote = chr; }
+        else if (chr == '\x28' || chr == '\x5b') { ++depth; }
+        else if (chr == '\x29' || chr == '\x5d') { --depth; }
+        else if (depth === 0 && (chr == ',' || chr == '>' || chr == '+' ||
+          chr == '~' || chr == ' ' || chr == '\t' || chr == '\n' ||
+          chr == '\f' || chr == '\r')) { return false; }
+      }
+
+      return l > 0;
+    },
+
+  notFlag = 0,
+
   compileSelector =
     function(expression, source, mode, callback) {
 
       var a, b, n, f, k = 0, compat, name,
-      NS, expr, value, match, result, status, symbol,
-      test, type, selector = expression, vars, read;
+      NS, expr, value, match, pendingTag = '', result, status, symbol,
+      test, type, selector = expression, vars, read,
+      argument, flag, nested, A_KEEP, A_HOLD, A_MOVE;
 
       read = Config.LEGACY ? readHelped : mode === false ? readGuarded : readDirect;
 
@@ -1776,7 +1840,7 @@
             // escapeIdentifier turns the CSS escapes into JavaScript ones, so
             // only the quote is escaped after it.
             expr = escapeIdentifier(match[1]).replace(/\x22/g, '\\"');
-            source = 'if((' + (Config.LEGACY ? read.attr('e', 'id') : 'e.id') + '=="' + expr + '")){' + source + '}';
+            source = 'if((' + read.id('e') + '=="' + expr + '")){' + source + '}';
             break;
 
           // class name resolver
@@ -1792,7 +1856,7 @@
             // the same string the comparison uses, so a filter built from it
             // cannot reject anything this test would have accepted
             A_PEND[A_PEND.length] = match[1];
-            source = 'if((' + read.tag('e') + '=="' + match[1] + '")){' + source + '}';
+            pendingTag = 'if((' + read.tag('e') + '=="' + match[1] + '")){';
             break;
 
           // namespace resolver
@@ -1851,6 +1915,7 @@
           // E ~ F (F relative sibling of E)
           case '~':
             match = selector.match(Patterns.relative);
+            if (pendingTag) { source = pendingTag + source + '}'; pendingTag = ''; }
             source = 'var N' + k + '=e;while(e&&(e=' + read.prev('e') + ')){' + source + '}e=N' + k + ';';
             break;
 
@@ -1858,6 +1923,7 @@
           // E + F (F adiacent sibling of E)
           case '+':
             match = selector.match(Patterns.adjacent);
+            if (pendingTag) { source = pendingTag + source + '}'; pendingTag = ''; }
             source = 'var N' + k + '=e;if(e&&(e=' + read.prev('e') + ')){' + source + '}e=N' + k + ';';
             break;
 
@@ -1866,6 +1932,7 @@
           case '\x09':
           case '\x20':
             match = selector.match(Patterns.ancestor);
+            if (pendingTag) { source = pendingTag + source + '}'; pendingTag = ''; }
             // whatever stands to the left of this now has to appear above the
             // candidate. A sibling combinator does not promote, but it does
             // not disqualify either: siblings share a parent, so an ancestor
@@ -1880,6 +1947,7 @@
           // E > F (F children of E)
           case '>':
             match = selector.match(Patterns.children);
+            if (pendingTag) { source = pendingTag + source + '}'; pendingTag = ''; }
             A_REQD.push.apply(A_REQD, A_PEND);
             A_PEND.length = 0;
             source = 'var N' + k + '=e;if(e&&(e=' + read.up('e') + ')){' + source + '}e=N' + k + ';';
@@ -2036,7 +2104,22 @@
                   source = 'if(s.match("' + expr + '",e)){' + source + '}';
                   break;
                 case 'not':
-                  source = 'if(!s.match("' + expr + '",e)){' + source + '}';
+                  if (isCompound(argument = match[2])) {
+                    flag = '_n' + notFlag++;
+                    A_KEEP = A_REQD.slice();
+                    A_HOLD = A_PEND.slice();
+                    A_MOVE = A_WALK;
+                    nested = compileSelector(argument, flag + '=true;', mode, callback);
+                    A_REQD.length = 0;
+                    A_REQD.push.apply(A_REQD, A_KEEP);
+                    A_PEND.length = 0;
+                    A_PEND.push.apply(A_PEND, A_HOLD);
+                    A_WALK = A_MOVE;
+                    source = 'var ' + flag + '=false;' + nested +
+                      'if(!' + flag + '){' + source + '}';
+                  } else {
+                    source = 'if(!s.match("' + expr + '",e)){' + source + '}';
+                  }
                   break;
                 case 'has':
                   source = 'if(s.has(' + JSON.stringify(splitList(match[2])) + ',e)){' + source + '}';
@@ -2104,6 +2187,7 @@
               match[1] = match[1].toLowerCase();
               switch (match[1]) {
                 case 'hover':
+                  trackHover();
                   source = 'if(e===s.HOVER){' + source + '}';
                   break;
                 case 'active':
@@ -2431,6 +2515,7 @@
       }
       // end of while selector
 
+      if (pendingTag) { source = pendingTag + source + '}'; }
       return source;
     },
 
@@ -2481,7 +2566,7 @@
     function(selectors, callback) {
       for (var i = 0, l = selectors.length, f = [ ]; l > i; ++i)
         f[i] = compile(selectors[i], false, callback);
-      return { factory: f };
+      return f;
     },
 
   // unique parser entry point for all
@@ -2556,13 +2641,13 @@
       var resolver;
 
       if (element && (resolver = matchResolvers.get(selectors))) {
-        return match_assert(resolver.factory, element, callback);
+        return match_assert(resolver, element, callback);
       }
 
       resolver = match_collect(parse(selectors, false), callback);
       matchResolvers.set(selectors, resolver);
 
-      return match_assert(resolver.factory, element, callback);
+      return match_assert(resolver, element, callback);
     },
 
   // Invalid items do not discard the remaining forgiving selectors.
@@ -2583,7 +2668,7 @@
       Snapshot.anchor = anchor;
       try {
         for (; l > i; ++i) {
-          context = /^[+~]/.test(list[i]) ? anchor.parentElement : anchor;
+          context = /^[+~]/.test(list[i]) ? upOf(anchor) : anchor;
           if (!list[i]) { emit(qsInvalid); return false; }
           // Compile even a root sibling argument, whose candidate set is empty.
           // Later invalid items must not be hidden by an earlier match.
@@ -2636,10 +2721,137 @@
     },
 
   // equivalent of w3c 'querySelectorAll' method
+  DESCENT_PROBE = 128,
+
+  partCounts = new Map(),
+
+  reTagChain = RegExp('^[.A-Za-z][-\\w]*(?:\\.[-\\w]+)?(?:\\x20[.A-Za-z][-\\w]*(?:\\.[-\\w]+)?)+$'),
+
+  reChainPart = RegExp('^([A-Za-z][-\\w]*)?(?:\\.([-\\w]+))?$'),
+
+  fetchLevel =
+    function(part, root, out) {
+      var found, i, l;
+
+      if (part.cls !== undefined) {
+        found = root.getElementsByClassName(part.cls);
+        if (part.tag === undefined) {
+          for (i = 0, l = found.length; l > i; ++i) { out[out.length] = found[i]; }
+        } else {
+          for (i = 0, l = found.length; l > i; ++i) {
+            if (found[i].localName == part.tag || (HTML_DOCUMENT &&
+              found[i].namespaceURI == NAMESPACE &&
+              found[i].localName == part.tag.toLowerCase())) {
+              out[out.length] = found[i];
+            }
+          }
+        }
+      } else {
+        found = root.getElementsByTagName(part.tag);
+        for (i = 0, l = found.length; l > i; ++i) { out[out.length] = found[i]; }
+      }
+
+      return out;
+    },
+
+  countPart =
+    function(part, context) {
+      var count, key = part.cls !== undefined ? '.' + part.cls : part.tag;
+
+      if ((count = partCounts.get(key)) === undefined) {
+        count = (part.cls !== undefined ?
+          context.getElementsByClassName(part.cls) :
+          context.getElementsByTagName(part.tag)).length;
+        partCounts.set(key, count);
+      }
+
+      return count;
+    },
+
+  descendChain =
+    function(chain, context) {
+      var budget = -1, i, j, k, l, level, m, next, node, part, prev,
+      size, spent = 0, want;
+
+      // a DocumentFragment has neither lookup, and byClass()/byTag() walk it
+      // by hand; the ordinary path already knows how. A legacy host reads its
+      // levels through helpers, which is the ordinary path's job as well.
+      if (Config.LEGACY ||
+        !context.getElementsByClassName || !context.getElementsByTagName) {
+        return null;
+      }
+
+      l = chain.length;
+      level = fetchLevel(chain[0], context, [ ]);
+      size = level.length;
+
+      for (k = 1; l > k; ++k) {
+        // What descending costs is one scoped lookup per element of every
+        // level it iterates; what it replaces is one pass over the elements of
+        // the last part. So that count is the budget, and the levels still to
+        // come are bounded by how many elements of their part the whole
+        // context holds. Both are counts of a live collection, which is a scan
+        // of the context, so they are only asked for once a level is wide
+        // enough for the answer to change the route: 0.060ms over 6344
+        // elements against 0.78us for the scoped lookup being decided, so a
+        // level of a hundred elements is cheaper to iterate than to ask about.
+        //
+        // A constant limit cannot decide this, because the same number means
+        // different things in different documents. 'ul li a' iterates 160 +
+        // 604 elements against 2370 anchors and descending wins by 2.6x; '.app
+        // .card .row a' iterates 1 + 400 + 800 against 430 anchors and loses.
+        // Bounding the levels to come is what declines the second one before
+        // it has spent 400 lookups finding that out.
+        if (size > DESCENT_PROBE) {
+          // A count of zero is not answered as an empty result here. The
+          // counts are remembered, and a remembered one can be older than the
+          // document: it may only choose between two routes that agree, never
+          // stand in for what one of them would have found.
+          if (budget < 0) { budget = countPart(chain[l - 1], context); }
+          want = spent + size;
+          for (m = k + 1; l > m; ++m) { want += countPart(chain[m - 1], context); }
+          if (want > budget) { return null; }
+        }
+        spent += size;
+        part = chain[k];
+        next = [ ];
+        prev = null;
+        for (i = 0, j = level.length; j > i; ++i) {
+          node = level[i];
+          // contained by the last element kept, so its matches are already
+          // covered and would come back a second time
+          if (prev !== null && prev.contains(node)) { continue; }
+          prev = node;
+          fetchLevel(part, node, next);
+        }
+        level = next;
+        size = level.length;
+      }
+
+      return level;
+    },
+
+  parseChain =
+    function(selectors) {
+      var i, l, match, parts = selectors.split('\x20');
+
+      for (i = 0, l = parts.length; l > i; ++i) {
+        match = reChainPart.exec(parts[i]);
+        if (!match || (match[1] === undefined && match[2] === undefined)) {
+          return null;
+        }
+        parts[i] = { tag: match[1], cls: match[2] };
+      }
+
+      return parts;
+    },
+
+  descentDeclined = createCache(),
+
   select =
     function _querySelectorAll(selectors, context, callback) {
 
-      var nodes = [ ], resolver;
+      var descended, nodes = [ ], resolver;
 
       arguments.length == 0 &&
         emit(qsNotArgs, TypeError);
@@ -2647,6 +2859,22 @@
       context || (context = doc);
         lastContext !== context &&
           (lastContext = switchContext(context));
+
+      // A plain descendant chain of tags is answered by descending, when the
+      // shape of the document makes that the cheaper direction. No callback:
+      // the ordinary path is what applies one, and this returns the answer
+      // rather than a candidate list.
+      if (selectors && callback === undefined &&
+        descentDeclined.get(selectors) === undefined &&
+        reTagChain.test(selectors) && (descended = parseChain(selectors))) {
+        descended = descendChain(descended, context);
+        if (descended) {
+          return !Config.NODE_LIST ?
+            descended : isInstanceOf(descended) ?
+            descended : toNodeList(descended);
+        }
+        descentDeclined.set(selectors, true);
+      }
 
       if (selectors) {
         if ((resolver = selectResolvers.get(selectors))) {
@@ -2656,7 +2884,7 @@
               n = resolver.nodeset;
             if (n.length > 1) {
               for (i = 0, l = n.length; l > i; ++i) {
-                list = compat[n[i][0]](context, n[i].slice(1))();
+                list = fetch[n[i][0]](n[i].slice(1), context);
                 if (f[i] !== null) {
                   f[i](list, callback, context, nodes);
                 } else {
@@ -2668,7 +2896,7 @@
                 hasDupes && (nodes = unique(nodes));
               }
             } else {
-              list = compat[n[0][0]](context, n[0].slice(1))();
+              list = fetch[n[0][0]](n[0].slice(1), context);
               nodes = f[0] ? f[0](list, callback, context, nodes) : list;
             }
             if (typeof callback == 'function') {
@@ -2741,9 +2969,11 @@
         htmlset[i] = compat[token[1]](context, token[2]);
         factory[i] = compile(optimized[i], true, null);
 
-        factory[i] ?
-          factory[i](htmlset[i](), callback, context, results) :
-          results.concat(htmlset[i]());
+        if (factory[i]) {
+          factory[i](htmlset[i](), callback, context, results);
+        } else {
+          concatList(results, htmlset[i]());
+        }
       }
 
       if (l > 1) {
@@ -2764,11 +2994,43 @@
 
   // handlers needed for the :hover pseudo-class
   // track state change in browsers and headless
-  initEnv =
-    (function() {
-      doc.addEventListener('mouseover', function(e) { Snapshot.HOVER = e.target; }, true);
-      doc.addEventListener('mouseout', function(e) { Snapshot.HOVER = null; }, true);
-    })(),
+  hoverWanted = false,
+
+  hoverTracked = null,
+
+  hoverDoc,
+
+  hoverRecord,
+
+  hoverChanged =
+    function(event) {
+      var targetDoc = event.target.ownerDocument || event.target,
+      record = hoverTracked ? hoverTracked.get(targetDoc) :
+        targetDoc === hoverDoc ? hoverRecord : undefined;
+      if (record) {
+        record.target = event.type == 'mouseover' ? event.target : null;
+        if (targetDoc === doc) { Snapshot.HOVER = record.target; }
+      }
+    },
+
+  trackHover =
+    function() {
+      hoverWanted = true;
+      if (!doc) { return; }
+      if (hoverTracked === null) { hoverTracked = createWeakMap(); }
+      var record = hoverTracked ? hoverTracked.get(doc) :
+        hoverDoc === doc ? hoverRecord : undefined;
+      if (!record) {
+        record = { target: null };
+        if (hoverTracked) { hoverTracked.set(doc, record); }
+        // Stable callbacks avoid duplicate listeners even without WeakMap.
+        doc.addEventListener('mouseover', hoverChanged, true);
+        doc.addEventListener('mouseout', hoverChanged, true);
+      }
+      hoverDoc = doc;
+      hoverRecord = record;
+      Snapshot.HOVER = record.target;
+    },
 
   // QSA placeholders to native references
   _closest, _matches,
@@ -2793,7 +3055,7 @@
       case 6: return [args[0], args[1], args[2], args[3], args[4], args[5], tail];
       case 7: return [args[0], args[1], args[2], args[3], args[4], args[5], args[6], tail];
       case 8: return [args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], tail];
-      default: return slice.call(args).concat(tail);
+      default: return sliceCall(args).concat(tail);
     }
   },
 
@@ -2922,7 +3184,7 @@
     hasAttrOf: legacyHasAttrOf,
     tagOf: legacyTagOf,
     idOf: legacyIdOf,
-    classOf: legacyClassOf,
+    legacyClassOf: legacyClassOf,
     upOf: legacyUpOf,
     nextOf: legacyNextOf,
     prevOf: legacyPrevOf,
@@ -2937,6 +3199,7 @@
 
     ancestor: ancestor,
 
+    mayMatch: mayMatch,
     ancestorMask: ancestorMask,
     clearAncestorMasks: clearAncestorMasks,
 

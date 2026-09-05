@@ -40,10 +40,14 @@
   "scripts": {
     "lint": "eslint ./src/nwsapi.js",
     "test": "node --test test/display-state-native-matches.test.cjs test/legacy-matcher.test.cjs test/legacy-runtime.test.cjs",
-    "test:browser": "node --test test/display-state-browser.test.cjs"
+    "test:browser": "node --test test/display-state-browser.test.cjs",
+    "test:audit:node": "playwright test --config playwright.audit.config.mjs",
+    "test:audit:browser": "playwright test --config playwright.browser-audit.config.mjs",
+    "test:audit:focused": "node --test test/resolver-execution.test.cjs test/ancestor-filter.test.cjs test/not-extracted.test.cjs test/descend-extracted.test.cjs test/hover-extracted.test.cjs test/forgiving-list-items.test.cjs test/relative-has.test.cjs test/media-state-gaps.test.cjs test/attribute-equality.test.cjs test/integration-legacy.test.cjs test/attribute-parse-error.test.cjs"
   },
   "devDependencies": {
-    "jsdom": "26.1.0",
+    "jsdom": "30.0.1",
+    "jsdom-reentry": "npm:jsdom@26.1.0",
     "@playwright/test": "1.62.1"
   }
 }

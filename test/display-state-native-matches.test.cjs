@@ -9,11 +9,11 @@ const source = readFileSync(resolve(__dirname, '../src/nwsapi.js'), 'utf8');
 const createNwsapi = require('../src/nwsapi.js');
 // Substitute before loading jsdom, which captures the factory on import but
 // creates its engine lazily. Restore the module cache after that import.
-const resolved = require.resolve('nwsapi', { paths: [require.resolve('jsdom')] });
+const resolved = require.resolve('nwsapi', { paths: [require.resolve('jsdom-reentry')] });
 const previous = require(resolved);
 let creations = 0;
 require.cache[resolved].exports = global => { creations++; return createNwsapi(global); };
-const { JSDOM } = require('jsdom');
+const { JSDOM } = require('jsdom-reentry');
 require.cache[resolved].exports = previous;
 const pseudos = [':modal', ':fullscreen', ':picture-in-picture', ':open', ':closed', ':popover-open'];
 
