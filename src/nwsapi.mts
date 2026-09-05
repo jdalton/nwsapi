@@ -1126,8 +1126,9 @@
     // check media resources is playing
     isPlaying = function (media) {
       // for <audio>, <video>, <source> and <track> elements
-      var parent =
-        media instanceof HTMLMediaElement ? null : media.parentElement
+      var parent = /^(?:audio|video)$/i.test(media.localName)
+        ? null
+        : media.parentElement
       return (
         !!(
           media &&
@@ -2219,14 +2220,28 @@
                   source = 'if(s.isPlaying(e)){' + source + '}'
                   break
                 case 'paused':
-                  source = 'if(!s.isPlaying(e)){' + source + '}'
+                  source =
+                    'if((/^(?:audio|video)$/i.test(e.localName)&&!s.isPlaying(e))){' +
+                    source +
+                    '}'
                   break
                 case 'seeking':
-                  source = 'if(!s.isPlaying(e)){' + source + '}'
+                  source =
+                    'if((/^(?:audio|video)$/i.test(e.localName)&&e.seeking===true)){' +
+                    source +
+                    '}'
                   break
                 case 'buffering':
+                  source =
+                    'if((/^(?:audio|video)$/i.test(e.localName)&&e.networkState===2&&!s.isPlaying(e))){' +
+                    source +
+                    '}'
                   break
                 case 'stalled':
+                  source =
+                    'if((/^(?:audio|video)$/i.test(e.localName)&&e.networkState===2&&!s.isPlaying(e))){' +
+                    source +
+                    '}'
                   break
                 case 'muted':
                   source =
@@ -2235,6 +2250,9 @@
                     '}'
                   break
                 case 'volume-locked':
+                  // the user-agent/OS volume lock has no DOM reflection,
+                  // valid but never matching in this engine
+                  source = 'if(false){' + source + '}'
                   break
                 default:
                   break
@@ -2269,6 +2287,15 @@
                   emit("'" + expression + "'" + qsInvalid)
                   break
               }
+            }
+
+            // *** time-dimensional pseudo-classes (Selectors Level 5)
+            // :current, :past, :future
+            else if ((match = selector.match(Patterns.time_state))) {
+              // no timeline is defined for elements of a static DOM, per
+              // https://drafts.csswg.org/selectors-5/#time-pseudos these
+              // pseudo-classes are valid but must not match any element
+              source = 'if(false){' + source + '}'
             }
 
             // allow pseudo-elements starting with single colon (:)
@@ -2889,6 +2916,7 @@
     selectResolvers = createCache(),
     // passed to resolvers
     Snapshot: {
+      isPlaying: typeof isPlaying
       HOVER?: EventTarget
       doc: Document
       from: Node
@@ -2942,6 +2970,7 @@
       isContentEditable: isContentEditable,
       isLink: isLink,
       hasAttributeNS: hasAttributeNS,
+      isPlaying: isPlaying,
     },
     // public exported methods/objects
     Dom = {
