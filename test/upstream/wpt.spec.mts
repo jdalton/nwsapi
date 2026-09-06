@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 import { manifest } from './manifest.mts'
 import { getSection } from './sections.mts'
+import { isAgent } from '../../scripts/lib/is-agent.mts'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '..', '..')
@@ -287,21 +288,28 @@ for (const entry of manifest) {
       }
     }
 
-    console.log(
-      `[wpt] ${entry.path} — passed ${counts.pass}, failed ${counts.fail}, ` +
-        `expected-fail ${counts.expectedFail}, unexpected-pass ${counts.unexpectedPass}, ` +
-        `skipped-by-filter ${counts.filtered} (of ${results.tests.length} subtests)`,
-    )
+    const verbose =
+      !isAgent() ||
+      failures.length > 0 ||
+      unexpectedPasses.length > 0 ||
+      updateExpectations
+    if (verbose) {
+      console.log(
+        `[wpt] ${entry.path} — passed ${counts.pass}, failed ${counts.fail}, ` +
+          `expected-fail ${counts.expectedFail}, unexpected-pass ${counts.unexpectedPass}, ` +
+          `skipped-by-filter ${counts.filtered} (of ${results.tests.length} subtests)`,
+      )
+    }
     for (const name of unexpectedPasses) {
       console.log(
         `[wpt]   warn: UNEXPECTED PASS (listed in expectations.json): ${name}`,
       )
     }
-    if (expectedFails.length > 0 && expectedFails.length <= 25) {
+    if (verbose && expectedFails.length > 0 && expectedFails.length <= 25) {
       for (const line of expectedFails) {
         console.log(`[wpt]   warn: expected ${line}`)
       }
-    } else if (expectedFails.length > 25) {
+    } else if (verbose && expectedFails.length > 25) {
       console.log(
         `[wpt]   warn: ${expectedFails.length} expected failures (see expectations.json)`,
       )
