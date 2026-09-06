@@ -3,6 +3,29 @@ import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 export const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url))
+export const UPSTREAM_HELPER_PATH = path.join(
+  REPO_ROOT,
+  'scripts/git-partial-submodule.mts',
+)
+export const PLAYWRIGHT_CLI_PATH = path.join(
+  REPO_ROOT,
+  'node_modules/@playwright/test/cli.js',
+)
+export const TAZE_CLI_PATH = path.join(
+  REPO_ROOT,
+  'node_modules/taze/bin/taze.mjs',
+)
+export const WORKSPACE_PATH = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
+export const LINT_SCRIPT_PATH = path.join(REPO_ROOT, 'scripts/lint.mts')
+export const FORMAT_SCRIPT_PATH = path.join(REPO_ROOT, 'scripts/format.mts')
+export const TSC_CLI_PATH = path.join(
+  REPO_ROOT,
+  'node_modules/typescript/bin/tsc',
+)
+export const TSC_CONFIG_PATH = path.join(
+  REPO_ROOT,
+  '.config/tsconfig.check.json',
+)
 export const COVERAGE_SCRIPT_PATH = path.join(REPO_ROOT, 'scripts/coverage.mts')
 export const COMPILE_CACHE_DIR = path.join(
   os.tmpdir(),

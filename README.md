@@ -195,7 +195,8 @@ pnpm install
 pnpm test
 ```
 
-Node tests do not need a browser or a WPT checkout.
+The install sets up WPT and Chromium for browser tests. It needs Git and network access.
+Node tests do not use the browser or WPT checkout.
 
 <details>
 <summary>Check changes before a push</summary>
@@ -205,7 +206,7 @@ pnpm run check
 pnpm run test:package
 ```
 
-Run `pnpm run format` to format source files, tests, and tooling.
+Run `pnpm run fix` to apply lint fixes, format files, and check the result.
 Run `pnpm run test:watch` to repeat Node tests while you edit files.
 
 Run `pnpm run ci:local` to test the GitHub Actions workflow locally.
@@ -217,7 +218,7 @@ CI uses one Node.js 26 job.
 <details>
 <summary>Run browser tests and measure coverage</summary>
 
-Follow [upstream test setup](docs/upstream.md) to download WPT and install Chromium.
+See [upstream testing](docs/upstream.md) for system requirements and setup recovery.
 WPT means Web Platform Tests.
 
 ```sh
@@ -243,8 +244,12 @@ Published files keep their existing paths, CommonJS API, browser and AMD support
 The package does not include TypeScript source files or development tools.
 
 Pin development dependencies in the `pnpm-workspace.yaml` catalog. Update `pnpm-lock.yaml` when dependencies change.
+Run `pnpm run update --check` to preview dependency updates.
+Run `pnpm run update` to apply updates and refresh the lockfile.
+Compiler tool versions need a separate compatibility review.
 New dependency versions have a one-day release delay. Dependency scripts need explicit approval.
 Use pnpm to install this repository; npm cannot install its catalog references.
+CI reads Node.js and package manager versions from `.config/external-tools.json`.
 
 </details>
 

@@ -7,5 +7,5 @@
 	branch = master
 	shallow = true
 	sparse-checkout = resources common dom/nodes css/selectors
-	verify = npm run test:upstream
+	verify = pnpm run test:upstream
 # no-release-tag: web-platform-tests publishes no release tags; pinned by ref on master

@@ -57,10 +57,12 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "rolldown": "catalog:",
+    "taze": "catalog:",
     "run-local-ci": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "yaml": "catalog:"
   },
   "devEngines": {
     "packageManager": [
@@ -87,7 +89,10 @@
     }
   },
   "scripts": {
-    "check": "pnpm run \"/^(format:check|lint|type)$/\"",
+    "check": "node scripts/run.mts scripts/check.mts",
+    "fix": "node scripts/run.mts scripts/fix.mts",
+    "update": "node scripts/run.mts scripts/update.mts",
+    "prepare": "node scripts/run.mts scripts/setup.mts",
     "ci:local": "node scripts/run.mts node_modules/run-local-ci/dist/native-launcher.js run --workflow .github/workflows/node.js.yml --quiet --pause-on-failure --github-token",
     "clean": "node scripts/run.mts scripts/clean.mts",
     "lint": "node scripts/run.mts scripts/lint.mts",
