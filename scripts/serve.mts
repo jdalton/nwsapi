@@ -7,7 +7,7 @@
  * and the legacy "/_repo/test/wpt" pages remain reachable from a browser.
  *
  * The port comes from process.env.PORT and falls
- * back to 8000, which is what playwright.config.mts expects. PORT=0 asks
+ * back to 8000, which is what .config/playwright.config.mts expects. PORT=0 asks
  * the OS for an ephemeral port. The server binds 127.0.0.1 only.
  */
 import { createReadStream, existsSync, realpathSync } from 'node:fs'

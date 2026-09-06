@@ -83,9 +83,9 @@
   },
   "scripts": {
     "clean": "node scripts/clean.mts",
-    "lint": "oxlint --deny-warnings src/**/*.mts src/*.mts scripts test/*.test.mts test/jsdom-adapter-package.mts test/upstream/*.mts .config/*.mts playwright.config.mts",
-    "format": "oxfmt --config .config/oxfmt.json scripts test/*.test.mts test/jsdom-adapter-package.mts test/upstream/*.mts .config/*.mts playwright.config.mts",
-    "format:check": "oxfmt --check --config .config/oxfmt.json scripts test/*.test.mts test/jsdom-adapter-package.mts test/upstream/*.mts .config/*.mts playwright.config.mts",
+    "lint": "oxlint --config .config/oxlint.json --deny-warnings src/**/*.mts src/*.mts scripts test/*.test.mts test/jsdom-adapter-package.mts test/upstream/*.mts .config/*.mts",
+    "format": "oxfmt --config .config/oxfmt.json scripts test/*.test.mts test/jsdom-adapter-package.mts test/upstream/*.mts .config/*.mts",
+    "format:check": "oxfmt --check --config .config/oxfmt.json scripts test/*.test.mts test/jsdom-adapter-package.mts test/upstream/*.mts .config/*.mts",
     "build": "node scripts/build.mts",
     "min": "node scripts/build.mts",
     "prepack": "node scripts/build.mts",
@@ -95,7 +95,7 @@
     "test:watch": "vitest --watch --config .config/vitest.config.mts",
     "test:coverage": "vitest run --config .config/vitest.config.mts --coverage",
     "test:package": "node test/jsdom-adapter-package.mts",
-    "test:upstream": "node scripts/build.mts && playwright test --config playwright.config.mts",
+    "test:upstream": "node scripts/build.mts && playwright test --config .config/playwright.config.mts",
     "upstream:clone": "node scripts/git-partial-submodule.mts clone",
     "upstream:verify": "node scripts/git-partial-submodule.mts verify"
   }

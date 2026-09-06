@@ -20,7 +20,7 @@
  *
  * Known failures live in expectations.json; regenerate the baseline with:
  *   WPT_UPDATE_EXPECTATIONS=1 npm run test:upstream
- * (playwright.config.mts forces --workers=1 while that env var is set, so
+ * (.config/playwright.config.mts forces --workers=1 while that env var is set, so
  * the per-file expectations.json rewrites cannot race).
  */
 import { readFileSync, writeFileSync } from 'node:fs'

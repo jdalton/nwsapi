@@ -16,7 +16,7 @@
   },
   "overrides": [
     {
-      "files": ["src/**/*.mts"],
+      "files": ["**/src/**/*.mts"],
       "rules": {
         "no-unused-vars": "off",
         "no-unused-expressions": "off",
