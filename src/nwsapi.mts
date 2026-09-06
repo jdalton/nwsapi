@@ -782,15 +782,22 @@
   // installed itself, _matches retains the native implementation
   matchesNative =
     function(node, selector) {
+      // A host such as jsdom can delegate matches() back to this engine.
+      if (matchingNative) return false;
       var matcher = _matches || node.matches || node.webkitMatchesSelector ||
         node.mozMatchesSelector || node.msMatchesSelector;
       if (!matcher) return false;
       try {
+        matchingNative = true;
         return matcher.call(node, selector);
       } catch (e) {
         return false;
+      } finally {
+        matchingNative = false;
       }
     },
+
+  matchingNative = false,
 
   // :open and :closed have a portable DOM state for details and dialog.
   // Native matching extends support to host-language states such as pickers.
