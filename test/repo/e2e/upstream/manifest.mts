@@ -36,6 +36,11 @@ export const manifest: Array<{
   install?: boolean
 }> = [
   {
+    path: '/_repo/test/repo/e2e/upstream/fixtures/identifier-escapes.html',
+    note: 'local WPT regression: escaped identifiers agree with native matching and selection after mutation',
+    install: false,
+  },
+  {
     path: '/_repo/test/repo/e2e/upstream/fixtures/matcher-cache.html',
     note: 'local regression using the upstream WPT harness: host matcher replacement, recursion, legacy configuration, and document switching',
     install: false,

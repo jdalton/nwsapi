@@ -58,13 +58,7 @@ test('unforgiving and top-level invalid lists still throw', t => {
   }
 })
 
-test(
-  'hexadecimal class escapes',
-  {
-    fails: true /* 'Existing class escape limitation, independent of list splitting' */,
-  },
-  t => {
-    const { document, nw } = fixture(t)
-    assert.equal(nw.match('p.a\\2c b', document.getElementById('p')), true)
-  },
-)
+test('hexadecimal class escapes', t => {
+  const { document, nw } = fixture(t)
+  assert.equal(nw.match('p.a\\2c b', document.getElementById('p')), true)
+})
