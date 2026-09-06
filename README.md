@@ -1,41 +1,75 @@
 # [NWSAPI](http://dperini.github.io/nwsapi/)
 
-Fast CSS Selectors API Engine
-
 <a href="https://badge.socket.dev/npm/package/nwsapi"><img src="https://badge.socket.dev/npm/package/nwsapi" alt="Socket Badge" height="20"></a>
 <img src="https://raw.githubusercontent.com/dperini/nwsapi/HEAD/assets/repo/coverage.svg" width="97" height="20" alt="Coverage" />
 
-NWSAPI is the development progress of [NWMATCHER](https://github.com/dperini/nwmatcher) aiming at [Selectors Level 4](https://www.w3.org/TR/selectors-4/) conformance. It has been completely reworked to be easily extended and maintained. It is a right-to-left selector parser and compiler written in pure Javascript with no external dependencies. It was initially thought as a cross browser library to improve event delegation and web page scraping in various frameworks but it has become a popular replacement of the native CSS selection and matching functionality in newer browsers and headless environments.
+NWSAPI finds DOM elements that match CSS selectors. It works in browsers and with DOM libraries in Node.js.
+The core engine has no external dependencies.
 
-It uses [regular expressions](https://en.wikipedia.org/wiki/Regular_expression) to parse CSS selector strings and [metaprogramming](https://en.wikipedia.org/wiki/Metaprogramming) to transforms these selector strings into Javascript function resolvers. This process is executed only once for each selector string allowing memoization of the function resolvers and achieving unmatched performances.
+NWSAPI builds on [NWMATCHER](https://github.com/dperini/nwmatcher) and aims to support [Selectors Level 4](https://www.w3.org/TR/selectors-4/).
+See the [supported selectors](https://github.com/dperini/nwsapi/wiki/CSS-supported-selectors) and [features](https://github.com/dperini/nwsapi/wiki/Features-and-compliance).
 
-## Installation
+## Install
 
-To include NWSAPI in a standard web page:
+```sh
+pnpm add nwsapi
+```
+
+## Use in a browser
+
+Copy `src/nwsapi.js` from the package into your project. Set the script path to that file.
 
 ```html
-<script type="text/javascript" src="nwsapi.js"></script>
+<script src="nwsapi.js"></script>
+<script>
+  const items = NW.Dom.select('.item', document)
+  const firstItem = NW.Dom.first('.item', document)
+</script>
 ```
 
-To include NWSAPI in a standard web page and automatically replace the native QSA:
+<details>
+<summary>Replace native selector methods</summary>
 
-```html
-<script type="text/javascript" src="nwsapi.js" onload="NW.Dom.install()"></script>
+`install()` changes selector methods such as `querySelectorAll()` and `matches()` for the page.
+Use it only when you want those methods to call NWSAPI.
+
+```js
+NW.Dom.install()
+// Restore the original methods when they are no longer needed.
+NW.Dom.uninstall()
 ```
 
-To use NWSAPI with Node.js:
+</details>
 
+<details>
+<summary>Use the factory in Node.js</summary>
+
+Node.js does not provide a DOM. This example creates one with jsdom.
+
+```sh
+pnpm add nwsapi jsdom
 ```
-$ pnpm add nwsapi
+
+```js
+const { JSDOM } = require('jsdom')
+const createNwsapi = require('nwsapi')
+const { window } = new JSDOM('<p class="item">Hello</p>')
+const nw = createNwsapi(window)
+
+const items = nw.select('.item', window.document)
+window.close()
 ```
 
-NWSAPI currently supports browsers (as a global, `NW.Dom`) and headless environments (as a CommonJS module).
+This example calls NWSAPI directly. It does not replace jsdom's selector engine.
 
+</details>
 
-## Using the jsdom adapter
+## Use the jsdom adapter
 
-To use nwsapi ≥ 2.3.0 in jsdom ≥ 27, choose an override below. Replace `<version>`
-with the published nwsapi version you want to use.
+Use nwsapi ≥ 2.3.0 with jsdom ≥ 27. The adapter replaces jsdom's selector engine for queries and stylesheet matching.
+
+<details>
+<summary>Set up the dependency and override</summary>
 
 Add the adapter's `css-tree` peer dependency to `package.json`:
 
@@ -46,6 +80,8 @@ Add the adapter's `css-tree` peer dependency to `package.json`:
   }
 }
 ```
+
+Replace `<version>` with the published nwsapi version you want to use.
 
 - npm (`package.json`):
 
@@ -64,177 +100,168 @@ Add the adapter's `css-tree` peer dependency to `package.json`:
     '@asamuzakjp/dom-selector': 'npm:nwsapi@<version>'
   ```
 
-Run `npm install` or `pnpm install`. jsdom will use nwsapi for queries and stylesheet
-matching. The existing nwsapi factory API and selector support are unchanged.
+Install dependencies after the change.
+The override does not change the NWSAPI factory API or add selector support.
 
-## Development
+</details>
 
-Run the development tools with Node.js ≥ 22. This does not change the library's
-runtime support.
-Use pnpm ≥ 11.25.0 within v11 or ≥ 12.3.4. New dependency resolutions use a
-one-day release-age delay. Dependency
-scripts need explicit approval. These requirements apply to contributors, not
-library consumers.
-CI runs lint, formatting checks, Node tests, the build and WPT in one Node.js 26 job.
+## API
 
-`pnpm run test:coverage` measures the engine with WPT in Chromium and the adapter
-with Node tests, then updates the badge. It needs the WPT checkout and Chromium
-(see setup below). Known WPT failures remain visible in the test report.
+Use `NW.Dom` in a browser or the engine returned by the Node.js factory.
+Pass a CSS selector as `selector` and a DOM node as `context`.
+
+| Method | Result |
+| --- | --- |
+| `select(selector, context)` | Returns all matching descendants as an array. Returns an empty array if none match. |
+| `first(selector, context)` | Returns the first matching descendant, or `null`. |
+| `match(selector, element)` | Returns `true` if the element matches, or `false`. |
+| `ancestor(selector, element)` | Checks the element, then its parents. Returns the nearest match, or `null`. |
+
+These methods accept an optional third argument, `callback`, which runs for matching elements.
+
+<details>
+<summary>Find elements by ID, tag, or class</summary>
+
+Pass the search context as the second argument. These helpers return arrays by default.
+
+```js
+NW.Dom.byId('content', document)
+NW.Dom.byTag('p', document)
+NW.Dom.byClass('item', document)
+```
+
+`byId()` can return multiple elements when the document contains duplicate IDs.
+
+</details>
+
+<details>
+<summary>Configure the engine</summary>
+
+```js
+NW.Dom.configure({ LOGERRORS: false, IDS_DUPES: false })
+const options = NW.Dom.configure()
+```
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `IDS_DUPES` | `true` | Allows duplicate IDs when finding elements. |
+| `FORGIVING` | `true` | Allows invalid items in forgiving selector lists such as `:is()` and `:where()`. |
+| `LOGERRORS` | `true` | Logs errors when exception throwing is disabled. |
+| `VERBOSITY` | `true` | Throws exceptions for invalid selectors. |
+| `LEGACY` | `false` | Enables feature checks and fallbacks for older environments. |
+| `NODE_LIST` | `false` | Uses NodeList-style results instead of arrays where supported. |
+
+Set `LEGACY` before the first query when the environment needs compatibility fallbacks.
+
+</details>
+
+<details>
+<summary>Add selector extensions</summary>
+
+Extensions use JavaScript source strings to define matching behavior. Register only trusted code.
+
+`registerCombinator(symbol, resolver)` adds a relationship between elements:
+
+```js
+NW.Dom.registerCombinator('^', 'e.parentElement')
+```
+
+`registerOperator(symbol, resolver)` adds an attribute operator:
+
+```js
+NW.Dom.registerOperator('!=', { p1: '^', p2: '$', p3: 'false' })
+```
+
+`registerSelector(name, pattern, compile)` adds a selector. The compile function returns matching code and a success flag.
+
+```js
+NW.Dom.registerSelector('Controls', /^:(control)(.*)/i, (match, source) => ({
+  source: 'if(/^(button|input|select|textarea)$/i.test(e.nodeName)){' + source + '}',
+  status: true,
+}))
+```
+
+The engine compiles selectors into JavaScript functions and caches those functions for later queries.
+
+</details>
+
+## Contribute
+
+Use Node.js 26 and pnpm ≥ 12.3.4. pnpm 11.25.0 and later v11 releases also work.
+These requirements apply to contributors, not package consumers.
 
 ```sh
 pnpm install
 pnpm test
+```
+
+Node tests do not need a browser or a WPT checkout.
+
+<details>
+<summary>Check changes before a push</summary>
+
+```sh
 pnpm run lint
 pnpm run format:check
 pnpm run type
-pnpm run build
+pnpm run test:package
 ```
 
-Dependency versions are pinned in the `pnpm-workspace.yaml` catalog. Keep
-`pnpm-lock.yaml` updated when changing dependencies. npm remains supported for
-installing the published package, but cannot install this repository's catalogs.
+Run `pnpm run format` to format source files, tests, and tooling.
+Run `pnpm run test:watch` to repeat Node tests while you edit files.
 
-Vitest runs the Node tests. Use `pnpm run test:watch` while editing or
-`pnpm run test:coverage` for coverage. Oxlint checks code, Oxfmt formats tooling
-and tests, and Rolldown transforms the `.mts` sources and minifies the browser build.
-Runtime source is not reformatted.
+Run `pnpm run ci:local` to test the GitHub Actions workflow locally.
+It needs Docker and GitHub CLI authentication. It pauses when a step fails.
+CI uses one Node.js 26 job.
 
-`pnpm run type` runs incremental TypeScript checks without emitting files.
-Oxlint also checks types. Coverage enforces the aggregate minimums in
-`.config/coverage.config.mts`; HTML reports are generated only in CI.
+</details>
 
-Run `pnpm run ci:local` before pushing to test the GitHub Actions workflows locally.
-It needs Docker and GitHub CLI authentication, and pauses on failures for fixes.
+<details>
+<summary>Run browser tests and measure coverage</summary>
 
-Node tests need no browser or WPT checkout. See [upstream testing](docs/upstream.md)
-for Chromium setup and known failures. `pnpm run clean` removes generated JavaScript.
+Follow [upstream test setup](docs/upstream.md) to download WPT and install Chromium.
+WPT means Web Platform Tests.
 
-`pnpm pack` and `pnpm publish` build the package first. Published `.js` paths, the
-CommonJS factory, browser/AMD wrapper, extension modules, and optional adapter peer
-stay unchanged. TypeScript sources and development tools are not shipped.
-Run `pnpm run test:package` to check the packed files and jsdom override.
-
-## Supported Selectors
-
-Here is a list of all the CSS2/CSS3/CSS4 [Supported selectors](https://github.com/dperini/nwsapi/wiki/CSS-supported-selectors).
-
-
-## Features and Compliance
-
-You can read more about NWSAPI [features and compliance](https://github.com/dperini/nwsapi/wiki/Features-and-compliance) on the wiki.
-
-
-## API
-
-### DOM Selection
-
-#### `ancestor( selector, context, callback )`
-
-Returns a reference to the nearest ancestor element matching `selector`, starting at `context`. Returns `null` if no element is found. If `callback` is provided, it is invoked for the matched element.
-
-#### `first( selector, context, callback )`
-
-Returns a reference to the first element matching `selector`, starting at `context`. Returns `null` if no element matches. If `callback` is provided, it is invoked for the matched element.
-
-#### `match( selector, element, callback )`
-
-Returns `true` if `element` matches `selector`, starting at `context`; returns `false` otherwise. If `callback` is provided, it is invoked for the matched element.
-
-#### `select( selector, context, callback )`
-
-Returns an array of all the elements matching `selector`, starting at `context`; returns empty `Array` otherwise. If `callback` is provided, it is invoked for each matching element.
-
-
-### DOM Helpers
-
-#### `byId( id, from )`
-
-Returns a reference to the first element with ID `id`, optionally filtered to descendants of the element `from`.
-
-#### `byTag( tag, from )`
-
-Returns an array of elements having the specified tag name `tag`, optionally filtered to descendants of the element `from`.
-
-#### `byClass( class, from )`
-
-Returns an array of elements having the specified class name `class`, optionally filtered to descendants of the element `from`.
-
-
-### Engine Configuration
-
-#### `configure( options )`
-
-The following is the list of currently available configuration options, their default values and descriptions, they are boolean flags that can be set to `true` or `false`:
-
-* `IDS_DUPES`: true  - true to allow using multiple elements having the same id, false to disallow
-* `LIVECACHE`: true  - true for caching both results and resolvers, false for caching only resolvers
-* `MIXEDCASE`: true  - true to match tag names case insensitive, false to match using case sensitive
-* `LOGERRORS`: true  - true to print errors and warnings to the console, false to mute both of them
-
-
-### Examples on extending the basic functionalities
-
-#### `configure( { <configuration-flag>: [ true | false ] } )`
-
-Disable logging errors/warnings to console, disallow duplicate ids. Example:
-
-```js
-NW.Dom.configure( { LOGERRORS: false, IDS_DUPES: false } );
-```
-NOTE: NW.Dom.configure() without parameters return the current configuration.
-
-#### `registerCombinator( symbol, resolver )`
-
-Registers a new symbol and its matching resolver in the combinators table. Example:
-
-```js
-NW.Dom.registerCombinator( '^', 'e.parentElement' );
+```sh
+pnpm run test:browser
+pnpm run test:upstream
+pnpm run test:coverage
 ```
 
-#### `registerOperator( symbol, resolver )`
+Coverage uses WPT in Chromium for the engine and Node tests for the adapter.
+The coverage command checks the minimums in `.config/coverage.config.mts` and updates the badge.
+CI also creates HTML reports. Known WPT failures remain visible in test results.
 
-Registers a new symbol and its matching resolver in the attribute operators table. Example:
+</details>
 
-```js
-NW.Dom.registerOperator( '!=', { p1: '^', p2: '$', p3: 'false' } );
-```
+<details>
+<summary>Build the package and update dependencies</summary>
 
-#### `registerSelector( name, rexp, func )`
+Rolldown builds JavaScript from the `.mts` source files and creates the minified browser file.
+Run `pnpm run build` to build the files. Run `pnpm run clean` to remove generated JavaScript.
 
-Registers a new selector, the matching RE and the resolver function, in the selectors table. Example:
+`pnpm pack` and `pnpm publish` build the package first.
+Published files keep their existing paths, CommonJS API, browser and AMD support, and extension modules.
+The package does not include TypeScript source files or development tools.
 
-```js
-NW.Dom.registerSelector('Controls', /^\:(control)(.*)/i,
-  (function(global) {
-    return function(match, source, mode, callback) {
-      var status = true;
-      source = 'if(/^(button|input|select|textarea)/i.test(e.nodeName)){' + source + '}';
-      return { 'source': source, 'status': status };
-    };
-  })(this));
-```
+Pin development dependencies in the `pnpm-workspace.yaml` catalog. Update `pnpm-lock.yaml` when dependencies change.
+New dependency versions have a one-day release delay. Dependency scripts need explicit approval.
+Use pnpm to install this repository; npm cannot install its catalog references.
 
-## 💖 Support & Sponsoring
+</details>
 
-**NWSAPI** powers millions of builds, web scrapers, and testing suites every single day—including key infrastructure like [jsdom](https://github.com/jsdom/jsdom).
+## Support the project
 
-Maintaining a zero-dependency, ultra-fast CSS engine that strictly adheres to evolving W3C Selectors specifications takes significant time, research, and testing. If NWSAPI helps your company save time, build features, or run reliable tests, **please consider supporting its ongoing maintenance!**
+Sponsorship helps fund maintenance, testing, and selector support.
 
-### Why Sponsor?
-* **For Developers:** Keep the project actively maintained, bug-free, and ahead of new browser standard updates.
-* **For Businesses:** Ensure the stability and long-term security of a critical dependency in your toolchain.
+<details>
+<summary>Sponsorship and donation options</summary>
 
-### 💳 Ways to Contribute
+Use [GitHub Sponsors](https://github.com/sponsors/dperini), [Open Collective](https://opencollective.com/nwsapi), or [Patreon](https://www.patreon.com/dperini) for ongoing support.
 
-Choose the platform that works best for you or your organization:
+You can also use [Ko-fi](https://ko-fi.com/dperini), [Buy Me a Coffee](https://www.buymeacoffee.com/dperini), or [Liberapay](https://liberapay.com/dperini).
+Use [IssueHunt](https://issuehunt.io/r/dperini/nwsapi) to fund issues.
 
-* **[GitHub Sponsors](https://github.com/sponsors/dperini):** Monthly tier-based sponsorship directly on GitHub.
-* **[Open Collective](https://opencollective.com/nwsapi):** Transparent funding for open-source projects, ideal for corporate backing.
-* **[Patreon](https://www.patreon.com/dperini):** Recurring monthly support with backer rewards.
-* **[Ko-fi](https://ko-fi.com/dperini):** Fast one-time tips or recurring micro-donations.
-* **[Buy Me a Coffee](https://www.buymeacoffee.com/dperini):** Quick, casual one-time donations.
-* **[Liberapay](https://liberapay.com/dperini):** Recurrent, zero-fee open-source support.
-* **[IssueHunt](https://issuehunt.io/r/dperini/nwsapi):** Fund specific features or bug bounties.
+Corporate sponsors can ask about custom licensing, dedicated support, or priority fixes.
 
----
-*Custom licensing, dedicated support, or priority bug fixes are also available for corporate sponsors. Feel free to reach out!*
+</details>
