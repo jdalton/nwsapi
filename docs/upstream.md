@@ -7,7 +7,7 @@ This is a selected suite, not the complete web-platform-tests project.
 Run with Node.js ≥ 22.
 
 ```sh
-pnpm install --frozen-lockfile
+pnpm install
 pnpm run upstream:clone
 pnpm run upstream:verify
 pnpm exec playwright install chromium

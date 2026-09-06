@@ -19,6 +19,16 @@ const instrumented = source.replace(
 function documentStub() {
   const document = {
     nodeType: 9,
+    documentElement: undefined as
+      | {
+          nodeType: number
+          localName: string
+          firstElementChild: null
+          hasAttribute(): boolean
+          namespaceURI: string
+          ownerDocument: unknown
+        }
+      | undefined,
     contentType: 'text/html',
     compatMode: 'CSS1Compat',
     addEventListener() {},
@@ -47,7 +57,7 @@ for (const [name, value, legacy, available] of [
   ['legacy with WeakMap', WeakMap, true, true],
   ['legacy without WeakMap', undefined, true, false],
   ['legacy with a non-callable WeakMap', {}, true, false],
-]) {
+] as const) {
   test(`${name} selects the allocator once`, () => {
     let reads = 0
     const context = { module: { exports: {} }, exports: {} }
@@ -59,7 +69,10 @@ for (const [name, value, legacy, available] of [
     })
     vm.runInNewContext(instrumented, context)
     const document = documentStub()
-    const nw = context.module.exports({ document, DOMException: Error })
+    const nw = (context.module.exports as typeof import('../src/nwsapi.js'))({
+      document,
+      DOMException: Error,
+    })
     assert.equal(
       nw.configure('LEGACY'),
       false,

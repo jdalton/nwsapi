@@ -19,7 +19,7 @@
  *   WPT_SECTION — selectors.js section name substring (see sections.mts).
  *
  * Known failures live in expectations.json; regenerate the baseline with:
- *   WPT_UPDATE_EXPECTATIONS=1 npm run test:upstream
+ *   WPT_UPDATE_EXPECTATIONS=1 pnpm run test:upstream
  * (.config/playwright.config.mts forces --workers=1 while that env var is set, so
  * the per-file expectations.json rewrites cannot race).
  */
@@ -207,7 +207,11 @@ for (const entry of manifest) {
 
     // String expressions: these evaluate in the page, where `window` exists.
     await page.waitForFunction('window.__wptResults', null, { timeout: 80_000 })
-    const results = await page.evaluate('window.__wptResults')
+    const results = await page.evaluate<{
+      installError: string | null
+      harness: { status: number; message: string | null }
+      tests: { name: string; status: number; message: string | null }[]
+    }>('window.__wptResults')
     if (coverageDirectory) {
       const coverage = (await page.coverage.stopJSCoverage()).filter(
         script => script.url === coverageURL,

@@ -5,7 +5,16 @@ const createNwsapi = require('./nwsapi.js');
 // jsdom passes implementation nodes in and expects public wrappers back.
 // css-tree is needed only by this adapter, for stylesheet specificity.
 class DOMSelector {
-  constructor(window, document = window.document, options = {}) {
+  declare window: Window & typeof globalThis;
+  declare idlUtils: { wrapperForImpl(node: unknown): Node } | undefined;
+  declare document: Document;
+  declare engine: ReturnType<typeof createNwsapi>;
+  declare css: typeof import('css-tree') | undefined;
+  declare selectors: Map<string, { ast: import('css-tree').SelectorList;
+    branches: { ast: import('css-tree').Selector; selector: string }[] }> | undefined;
+
+  constructor(window, document = window.document,
+    options: { idlUtils?: { wrapperForImpl(node: unknown): Node } } = {}) {
     this.window = window;
     this.idlUtils = options.idlUtils;
     this.document = this.wrap(document);
@@ -80,9 +89,9 @@ class DOMSelector {
     const selectors = this.selectors || (this.selectors = new Map());
     let entry = selectors.get(selector);
     if (!entry) {
-      const ast = this.css.parse(selector, { context: 'selectorList' });
+      const ast = this.css.parse(selector, { context: 'selectorList' }) as import('css-tree').SelectorList;
       const branches = [];
-      ast.children.forEach(branch => {
+      ast.children.forEach((branch: import('css-tree').Selector) => {
         // jsdom does not compute styles for pseudo-elements. Keep them out of
         // element specificity, even when another branch in the list matches.
         let pseudoElement = false;

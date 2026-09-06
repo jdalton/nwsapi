@@ -15,7 +15,7 @@
  *  https://javascript.nwbox.com/nwsapi/nwsapi.js
  */
 
-(function Export(global, factory) {
+(function Export(global: { NW?: { Dom?: unknown } }, factory) {
 
   'use strict';
 
@@ -102,7 +102,7 @@
     pseudo_dbl: ':(after|before|first\\-letter|first\\-line|selection|placeholder|-webkit-[-a-zA-Z0-9]{2,})\\b'
   },
 
-  Patterns = {
+  Patterns: Record<string, RegExp> = {
     // pseudo-classes
     treestruct: RegExp('^:(?:' + GROUPS.treestruct + ')(.*)', 'i'),
     structural: RegExp('^:(?:' + GROUPS.structural + ')(.*)', 'i'),
@@ -241,7 +241,7 @@
   // ES5 bounded LRU cache. It stores query plans (compiled resolvers),
   // never DOM result sets. A prefixed dictionary avoids user-key collisions
   // and a doubly linked list keeps the least-recently-used entry at the head.
-  createCache = function(limit) {
+  createCache = function(limit?) {
     var cache = { }, head = null, tail = null, size = 0,
       prefix = '\x01', has = function(key) {
         return Object.prototype.hasOwnProperty.call(cache, prefix + key);
@@ -371,7 +371,7 @@
     },
 
   switchContext =
-    function(context, force) {
+    function(context, force?) {
       var oldDoc = doc;
       doc = context.ownerDocument || context;
       if (force || oldDoc !== doc) {
@@ -515,7 +515,7 @@
   // Walk 'context' in tree order collecting elements carrying 'id'. The
   // walk can start at 'from', an element already known to be the first match.
   byIdRaw =
-    function(id, context, from) {
+    function(id, context, from?) {
       var node = context, nodes = [ ], next = from || node.firstElementChild;
       while ((node = next)) {
         node.id == id && (nodes[nodes.length] = node);
@@ -628,7 +628,7 @@
         } else nodes = none;
       }
       return !Config.NODE_LIST ?
-        nodes : isInstanceof(nodes) ?
+        nodes : isInstanceOf(nodes) ?
         nodes : toNodeList(nodes);
     },
 
@@ -883,7 +883,7 @@
 
   // centralized error and exceptions handling
   emit =
-    function(message, proto) {
+    function(message, proto?) {
       var err;
       if (Config.VERBOSITY) {
         if (proto) {
@@ -1110,6 +1110,7 @@
         N_VARS.length = 0;
       }
 
+      // oxlint-disable-next-line typescript/no-implied-eval -- Selectors compile to resolver functions.
       factory = Function('s', F_INIT + '{' + head + vars + ';' + loop + 'return r;}')(Snapshot);
 
       if (mode || mode === null) {
@@ -2125,7 +2126,8 @@
   // overrides QSA methods (only for browsers)
   install =
     function(all) {
-      // save references
+      // Saved DOM methods are invoked with their receiver or restored below.
+      /* oxlint-disable typescript/unbound-method */
       _closest = Element.prototype.closest;
       _matches = Element.prototype.matches;
 
@@ -2134,6 +2136,7 @@
 
       _querySelectorDoc = Document.prototype.querySelector;
       _querySelectorAllDoc = Document.prototype.querySelectorAll;
+      /* oxlint-enable typescript/unbound-method */
 
       function parseQSArgs() {
         var method = arguments[arguments.length - 1];
@@ -2156,7 +2159,7 @@
       HTMLElement.prototype.matches =
         function matches() {
           return parseQSArgs.apply(this, [].slice.call(arguments).concat(match));
-        };
+        } as unknown as Element['matches'];
 
       Element.prototype.querySelector =
       HTMLElement.prototype.querySelector =
@@ -2236,7 +2239,18 @@
   selectResolvers = createCache(),
 
   // passed to resolvers
-  Snapshot = {
+  Snapshot: {
+    HOVER?: EventTarget;
+    doc: Document; from: Node; root: Element;
+    byTag: typeof byTag; has: typeof has; first: typeof first;
+    match: typeof match; select: typeof select; ancestor: typeof ancestor;
+    nthOfType: typeof nthOfType; nthElement: typeof nthElement;
+    isOpen: typeof isOpen; isClosed: typeof isClosed; isModal: typeof isModal;
+    isFullscreen: typeof isFullscreen; isPictureInPicture: typeof isPictureInPicture;
+    isPopoverOpen: typeof isPopoverOpen; isFocusable: typeof isFocusable;
+    isContentEditable: typeof isContentEditable; isLink: typeof isLink;
+    hasAttributeNS: typeof hasAttributeNS;
+  } = {
 
     doc: doc,
     from: doc,

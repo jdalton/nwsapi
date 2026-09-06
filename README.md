@@ -71,8 +71,8 @@ matching. The existing nwsapi factory API and selector support are unchanged.
 
 Run the development tools with Node.js ≥ 22. This does not change the library's
 runtime support.
-Use npm ≥ 11.19.0 within v11 or ≥ 12.0.2, or pnpm ≥ 11.25.0 within v11
-or ≥ 12.3.4. New dependency resolutions use a one-day release-age delay. Dependency
+Use pnpm ≥ 11.25.0 within v11 or ≥ 12.3.4. New dependency resolutions use a
+one-day release-age delay. Dependency
 scripts need explicit approval. These requirements apply to contributors, not
 library consumers.
 CI runs lint, formatting checks, Node tests, the build and WPT in one Node.js 26 job.
@@ -86,16 +86,22 @@ pnpm install
 pnpm test
 pnpm run lint
 pnpm run format:check
+pnpm run type
 pnpm run build
 ```
 
-Alternatively, use `npm ci` and `npm run <script>`. Keep both lockfiles
-updated when changing dependencies.
+Dependency versions are pinned in the `pnpm-workspace.yaml` catalog. Keep
+`pnpm-lock.yaml` updated when changing dependencies. npm remains supported for
+installing the published package, but cannot install this repository's catalogs.
 
 Vitest runs the Node tests. Use `pnpm run test:watch` while editing or
 `pnpm run test:coverage` for coverage. Oxlint checks code, Oxfmt formats tooling
 and tests, and Rolldown transforms the `.mts` sources and minifies the browser build.
 Runtime source is not reformatted.
+
+`pnpm run type` runs incremental TypeScript checks without emitting files.
+Oxlint also checks types. Coverage enforces the aggregate minimums in
+`.config/coverage.config.mts`; HTML reports are generated only in CI.
 
 Node tests need no browser or WPT checkout. See [upstream testing](docs/upstream.md)
 for Chromium setup and known failures. `pnpm run clean` removes generated JavaScript.

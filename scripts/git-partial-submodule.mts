@@ -441,7 +441,9 @@ function verifyEntry(entry) {
       .map(line => line.trim())
       .filter(Boolean)
       .sort()
-    const declared = [...entry.sparsePatterns].sort()
+    const declared = [...entry.sparsePatterns].sort((a: string, b: string) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    )
     const sparseOk =
       listed.length === declared.length &&
       listed.every((pattern, i) => pattern === declared[i])
@@ -532,7 +534,7 @@ function verifyEntry(entry) {
  * whitespace and executed directly with no shell, so quoting, environment
  * assignments, and shell operators (&&, |, >, ...) are not supported —
  * keep the `verify` key a simple "<command> <arg>..." like
- * "npm run test:upstream".
+ * "pnpm run test:upstream".
  */
 function deepVerifyEntry(entry) {
   const label = 'deep verify'.padEnd(16)

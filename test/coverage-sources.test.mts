@@ -1,6 +1,11 @@
 import { test, expect } from 'vitest'
 import path from 'node:path'
-import { combineCoverage } from '../scripts/lib/coverage.mts'
+import {
+  combineCoverage,
+  checkCoverageThresholds,
+  coverageReporters,
+} from '../scripts/lib/coverage.mts'
+import { coverageThresholds } from '../.config/coverage.config.mts'
 
 const root = path.resolve('coverage-fixture')
 const engine = path.join(root, 'src/nwsapi.js')
@@ -42,4 +47,31 @@ test('incomplete coverage cannot silently replace the combined badge', () => {
   expect(() => combineCoverage(covered(engine, 1), {}, root)).toThrow(
     'Missing Node',
   )
+})
+
+test('aggregate coverage thresholds reject regressions in each metric', () => {
+  const summary = {
+    statements: { pct: 73 },
+    branches: { pct: 61 },
+    functions: { pct: 74 },
+    lines: { pct: 70 },
+  }
+  expect(() => checkCoverageThresholds(summary)).not.toThrow()
+  for (const metric of Object.keys(coverageThresholds)) {
+    for (const pct of [summary[metric].pct - 0.01, NaN, Infinity, 'Unknown']) {
+      expect(() =>
+        checkCoverageThresholds({ ...summary, [metric]: { pct } }),
+      ).toThrow(metric)
+    }
+  }
+})
+
+test('HTML reports are generated only in CI', () => {
+  expect(coverageReporters('')).toEqual(['text', 'json', 'json-summary'])
+  expect(coverageReporters('true')).toEqual([
+    'text',
+    'json',
+    'json-summary',
+    'html',
+  ])
 })

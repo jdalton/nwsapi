@@ -10,7 +10,11 @@ import libReport from 'istanbul-lib-report'
 import reports from 'istanbul-reports'
 import { manifest } from '../test/upstream/manifest.mts'
 import { REPO_ROOT } from './lib/paths.mts'
-import { combineCoverage } from './lib/coverage.mts'
+import {
+  combineCoverage,
+  coverageReporters,
+  checkCoverageThresholds,
+} from './lib/coverage.mts'
 
 const { createCoverageMap } = libCoverage
 const { createContext } = libReport
@@ -61,12 +65,13 @@ try {
       ),
     ),
   )
+  const combined = combineCoverage(coverage, node, REPO_ROOT)
   const context = createContext({
     dir: path.join(REPO_ROOT, 'coverage'),
-    coverageMap: combineCoverage(coverage, node, REPO_ROOT),
+    coverageMap: combined,
   })
-  for (const name of ['text', 'html', 'json', 'json-summary'])
-    reports.create(name).execute(context)
+  for (const name of coverageReporters()) reports.create(name).execute(context)
+  checkCoverageThresholds(combined.getCoverageSummary())
   run('scripts/gen/coverage-badge.mts', [])
 } finally {
   rmSync(raw, { recursive: true, force: true })

@@ -63,7 +63,8 @@ for (const format of ['browser', 'CommonJS', 'AMD']) {
         vm.runInContext(source, dom.getInternalVMContext())
       }
       const engine = factory ? factory(window) : window.NW.Dom
-      const ids = () => Array.from(engine.select('div > p.x'), node => node.id)
+      const ids = () =>
+        Array.from(engine.select('div > p.x'), (node: Element) => node.id)
       assert.deepEqual(ids(), ['a'])
       assert.equal(
         engine.match('div > p.x', window.document.getElementById('a')),

@@ -1,5 +1,9 @@
 {
-  "plugins": ["oxc", "import"],
+  "options": {
+    "typeAware": true,
+    "denyWarnings": true
+  },
+  "plugins": ["oxc", "import", "typescript"],
   "categories": {
     "correctness": "error"
   },
@@ -12,7 +16,10 @@
     "NW": "readonly"
   },
   "rules": {
-    "no-console": "off"
+    "no-console": "off",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/await-thenable": "error"
   },
   "overrides": [
     {

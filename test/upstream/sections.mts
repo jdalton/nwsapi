@@ -36,7 +36,7 @@ const selectorsJsPath = path.resolve(
 // Fresh clones don't have the sparse WPT checkout yet; fail with a pointer
 // to the setup command instead of a raw ENOENT from readFileSync below.
 if (!existsSync(selectorsJsPath)) {
-  throw new Error('upstream/wpt missing — run: npm run upstream:clone')
+  throw new Error('upstream/wpt missing — run: pnpm run upstream:clone')
 }
 
 const ARRAY_RE =

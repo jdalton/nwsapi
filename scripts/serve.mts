@@ -24,7 +24,7 @@ const repoRoot = path.resolve(
 const docRoot = path.join(repoRoot, 'upstream', 'wpt')
 
 if (!existsSync(docRoot)) {
-  console.error('upstream/wpt missing — run: npm run upstream:clone')
+  console.error('upstream/wpt missing — run: pnpm run upstream:clone')
   process.exit(1)
 }
 
@@ -75,7 +75,14 @@ function send(res, status, body, headers = {}) {
   res.end(body)
 }
 
-const server = createServer(async (req, res) => {
+const server = createServer((req, res) => {
+  serve(req, res).catch(error => res.destroy(error))
+})
+
+async function serve(
+  req: import('node:http').IncomingMessage,
+  res: import('node:http').ServerResponse,
+) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     send(res, 405, 'method not allowed')
     return
@@ -141,9 +148,9 @@ const server = createServer(async (req, res) => {
   } catch {
     send(res, 404, `not found: ${pathname}`)
   }
-})
+}
 
-server.on('error', err => {
+server.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
     console.error(
       `Port ${port} is already in use — another scripts/serve.mts (or some other server) ` +
@@ -157,7 +164,7 @@ server.on('error', err => {
 
 server.listen(port, '127.0.0.1', () => {
   console.log(
-    `WPT static server listening at http://localhost:${server.address().port}/`,
+    `WPT static server listening at http://localhost:${(server.address() as import('node:net').AddressInfo).port}/`,
   )
   console.log(`  document root: ${docRoot}`)
   console.log(`  /_repo/       -> ${repoRoot}`)

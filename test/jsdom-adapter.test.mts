@@ -28,7 +28,7 @@ const { JSDOM } = jsdomRequire('jsdom')
 function host(
   t,
   html = '<!doctype html><section><div class="item" id="one"></div><div class="item" id="two"></div></section>',
-  options,
+  options?: import('jsdom').ConstructorOptions,
 ) {
   const dom = new JSDOM(html, options)
   t.onTestFinished(() => dom.window.close())
@@ -48,7 +48,7 @@ test('real jsdom queries return wrappers and a static NodeList in document order
   const nodes = document.querySelectorAll('#two, .item')
   assert.ok(nodes instanceof window.NodeList)
   assert.deepEqual(
-    Array.from(nodes, n => n.id),
+    Array.from(nodes, (n: Element) => n.id),
     ['one', 'two'],
   )
   assert.equal(document.querySelector('#one'), nodes[0])
@@ -68,7 +68,10 @@ test('element, detached subtree, and fragment queries stay in their context', t 
   const section = document.body.firstElementChild
   assert.equal(section.querySelector('section'), null)
   assert.deepEqual(
-    Array.from(section.querySelectorAll(':scope > .item'), n => n.id),
+    Array.from(
+      section.querySelectorAll(':scope > .item'),
+      (n: Element) => n.id,
+    ),
     ['one', 'two'],
   )
   const fragment = document.createDocumentFragment()

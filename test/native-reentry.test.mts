@@ -18,7 +18,9 @@ test('host matcher delegation stays bounded', t => {
     ':picture-in-picture',
   ]) {
     let calls = 0
-    node.matches = value => {
+    node.matches = function (
+      value,
+    ): this is HTMLElement & SVGElement & MathMLElement {
       if (++calls > 4) throw new Error('recursive host matcher')
       return engine.match(value, node)
     }
@@ -33,10 +35,12 @@ test('native matching recovers after exceptions and keeps host state', t => {
   t.onTestFinished(() => window.close())
   const engine = factory(window)
   const node = window.document.body.firstElementChild
-  node.matches = () => {
+  node.matches = function (): this is HTMLElement & SVGElement & MathMLElement {
     throw new Error('unsupported')
   }
   expect(engine.match(':open', node)).toBe(false)
-  node.matches = () => true
+  node.matches = function (): this is HTMLElement & SVGElement & MathMLElement {
+    return true
+  }
   expect(engine.match(':open', node)).toBe(true)
 })
