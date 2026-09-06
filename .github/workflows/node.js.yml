@@ -19,7 +19,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
-      - run: npm test
+      - run: npm run test:coverage
+      - run: npm run check:coverage
       - run: npm run test:package
       - run: npm run upstream:clone
       - run: npm run upstream:verify
