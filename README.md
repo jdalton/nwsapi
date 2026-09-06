@@ -77,7 +77,7 @@ library consumers.
 CI runs lint, formatting checks, Node tests, the build and WPT in one Node.js 26 job.
 
 ```sh
-pnpm install --frozen-lockfile
+pnpm install
 pnpm test
 pnpm run lint
 pnpm run format:check
