@@ -91,14 +91,12 @@
     locationpc: '(any\\-link|link|visited|target|defined)\\b',
     useraction: '(hover|active|focus\\-within|focus\\-visible|focus)\\b',
     structural: '(scope|root|empty|(?:(?:first|last|only)(?:-child|\\-of\\-type)))\\b',
-    inputstate: '(enabled|disabled|read\\-only|read\\-write|placeholder\\-shown|default)\\b',
+    inputstate: '(enabled|disabled|read\\-only|read\\-write|placeholder\\-shown|default|autofill|-webkit\\-autofill)\\b',
     inputvalue: '(checked|indeterminate|required|optional|valid|invalid|in\\-range|out\\-of\\-range)\\b',
     // pseudo-classes not requiring parameters and describing functional state
     rsrc_state: '(playing|paused|seeking|buffering|stalled|muted|volume\\-locked)\\b',
     disp_state: '(open|closed|modal|fullscreen|picture\\-in\\-picture|popover\\-open|popover)\\b',
     time_state: '(current|past|future)\\b',
-    // pseudo-classes for parsing only selectors
-    pseudo_nop: '(autofill|-webkit\\-autofill)\\b',
     // pseudo-elements starting with single colon (:)
     pseudo_sng: '(after|before|first\\-letter|first\\-line)\\b',
     // pseudo-elements starting with double colon (::)
@@ -118,7 +116,6 @@
     time_state: RegExp('^:(?:' + GROUPS.time_state + ')(.*)', 'i'),
     locationpc: RegExp('^:(?:' + GROUPS.locationpc + ')(.*)', 'i'),
     logicalsel: RegExp('^:(?:' + GROUPS.logicalsel + ')(.*)', 'i'),
-    pseudo_nop: RegExp('^:(?:' + GROUPS.pseudo_nop + ')(.*)', 'i'),
     pseudo_sng: RegExp('^:(?:' + GROUPS.pseudo_sng + ')(.*)', 'i'),
     pseudo_dbl: RegExp('^:(?:' + GROUPS.pseudo_dbl + ')(.*)', 'i'),
     // combinator symbols
@@ -1618,7 +1615,7 @@
                   break;
                 case 'autofill':
                 case '-webkit-autofill':
-                  source = 'if(e.matches&&e.matches(":-webkit-autofill,:autofill")){' + source + '}';
+                  source = 'if(s.matchesNative(e,":autofill")||s.matchesNative(e,":-webkit-autofill")){' + source + '}';
                   break;
                 case 'placeholder-shown':
                   source =
@@ -1775,11 +1772,6 @@
                   emit('\'' + expression + '\'' + qsInvalid);
                   break;
               }
-            }
-
-            // placeholder for parse only no-op selectors
-            else if ((match = selector.match(Patterns.pseudo_nop))) {
-              break;
             }
 
             // allow pseudo-elements starting with single colon (:)
@@ -2336,6 +2328,7 @@
     match: typeof match; matchForgiving: typeof matchForgiving;
     select: typeof select; ancestor: typeof ancestor;
     nthOfType: typeof nthOfType; nthElement: typeof nthElement;
+    matchesNative: typeof matchesNative;
     isOpen: typeof isOpen; isClosed: typeof isClosed; isModal: typeof isModal;
     isFullscreen: typeof isFullscreen; isPictureInPicture: typeof isPictureInPicture;
     isPopoverOpen: typeof isPopoverOpen; isFocusable: typeof isFocusable;
@@ -2360,6 +2353,7 @@
     nthOfType: nthOfType,
     nthElement: nthElement,
 
+    matchesNative: matchesNative,
     isOpen: isOpen,
     isClosed: isClosed,
     isModal: isModal,
