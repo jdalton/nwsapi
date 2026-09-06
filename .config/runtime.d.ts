@@ -7,6 +7,8 @@ interface NwsapiEngine {
   first(selector: string, context?: Node): Element | null
   match(this: void, selector: string, context: Element): boolean
   configure(options: Record<string, unknown>, clear?: boolean): unknown
+  install(all?: boolean): void
+  uninstall(): void
   registerSelector(
     name: string,
     expression: RegExp,
