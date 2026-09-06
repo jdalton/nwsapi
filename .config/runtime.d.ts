@@ -1,4 +1,4 @@
-interface NwsapiEngine {
+export interface NwsapiEngine {
   S_BODY: string
   M_BODY: string
   S_TEST: string
@@ -31,4 +31,3 @@ declare global {
   }
   const define: { (factory: unknown): void; amd?: unknown }
 }
-export {}

@@ -3,10 +3,10 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const assert = require('node:assert/strict')
 const { readFileSync } = require('node:fs')
-const { resolve } = require('node:path')
+import path from 'node:path'
 import { test } from 'vitest'
 const vm = require('node:vm')
-const source = readFileSync(resolve(__dirname, '../src/nwsapi.js'), 'utf8')
+const source = readFileSync(path.resolve(__dirname, '../src/nwsapi.js'), 'utf8')
 const createNwsapi = require('../src/nwsapi.js')
 // Route jsdom through the adapter from this checkout. Count actual adapter
 // instances so the reentry test cannot silently exercise jsdom's default engine.
@@ -25,12 +25,14 @@ require.cache[resolved].exports = {
       super(...args)
       creations++
       const match = this.engine.match
-      this.engine.match = function (...args) {
+      this.engine.match = function (...matchArgs) {
         matchCalls++
         peakDepth = Math.max(peakDepth, ++depth)
         try {
-          if (depth > 20) throw new Error('Reentry safety limit')
-          return match.apply(this, args)
+          if (depth > 20) {
+            throw new Error('Reentry safety limit')
+          }
+          return match.apply(this, matchArgs)
         } finally {
           depth--
         }
@@ -60,7 +62,7 @@ function host(t) {
   return dom.window
 }
 
-for (const legacy of [false, true])
+for (const legacy of [false, true]) {
   test(`delegating matchers are called once per document (LEGACY=${legacy})`, t => {
     const windows = [host(t), host(t)]
     const nw = createNwsapi({ document: windows[0].document })
@@ -74,17 +76,19 @@ for (const legacy of [false, true])
       }
     })
     for (let i = 0; i < 50; i++) {
-      for (const node of nodes)
-        for (const pseudo of pseudos)
+      for (const node of nodes) {
+        for (const pseudo of pseudos) {
           assert.equal(nw.match(pseudo, node), false)
+        }
+      }
     }
     assert.deepEqual(calls, [1, 1])
   })
+}
 
 test('browser bootstrap safely captures an already-delegating prototype', t => {
   const window = host(t)
-  let nw,
-    calls = 0
+  let calls = 0
   window.Element.prototype.matches = function (selector) {
     assert.ok(++calls < 10, 'unbounded recursion')
     return nw.match(selector, this)
@@ -95,10 +99,11 @@ test('browser bootstrap safely captures an already-delegating prototype', t => {
     NW: undefined,
   }
   vm.runInNewContext(source, context)
-  nw = context.NW.Dom
+  const nw = context.NW.Dom
   const node = window.document.querySelector('div')
-  for (let i = 0; i < 50; i++)
+  for (let i = 0; i < 50; i++) {
     assert.equal(nw.match(':popover-open', node), false)
+  }
   assert.equal(calls, 1)
 })
 
@@ -108,8 +113,11 @@ test('the original jsdom Element.matches route uses this engine without recursio
   const beforeCalls = matchCalls
   peakDepth = 0
   const node = window.document.body.firstElementChild
-  for (let i = 0; i < 50; i++)
-    for (const pseudo of pseudos) assert.equal(node.matches(pseudo), false)
+  for (let i = 0; i < 50; i++) {
+    for (const pseudo of pseudos) {
+      assert.equal(node.matches(pseudo), false)
+    }
+  }
   assert.equal(
     creations - before,
     1,
@@ -132,15 +140,18 @@ test('delegation remains cached when a re-entering matcher subsequently throws',
     nw.match(selector, this)
     throw new Error('host failed after re-entry')
   }
-  for (let i = 0; i < 10; i++)
+  for (let i = 0; i < 10; i++) {
     assert.equal(nw.match(':popover-open', node), false)
+  }
   assert.equal(calls, 1)
 })
 
 test('an unsupported selector does not disable other host state queries', t => {
   const window = host(t)
   window.Element.prototype.matches = function (selector) {
-    if (selector === ':fullscreen') throw new Error('unsupported')
+    if (selector === ':fullscreen') {
+      throw new Error('unsupported')
+    }
     return selector === ':popover-open'
   }
   const nw = createNwsapi({ document: window.document })
@@ -183,7 +194,8 @@ test('hosts without WeakMap retain bounded recursion and the single-document fas
     return nw.match(selector, this)
   }
   const node = window.document.querySelector('div')
-  for (let i = 0; i < 50; i++)
+  for (let i = 0; i < 50; i++) {
     assert.equal(nw.match(':popover-open', node), false)
+  }
   assert.equal(calls, 1)
 })

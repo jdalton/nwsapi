@@ -17,7 +17,7 @@ export default defineConfig({
     isolate: true,
     maxWorkers: 4,
     restoreMocks: true,
-    testTimeout: 10000,
+    testTimeout: 10_000,
     coverage: {
       provider: 'v8',
       include: ['src/*.js'],

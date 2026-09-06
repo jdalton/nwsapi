@@ -111,7 +111,7 @@ function parseSelectorsJs(text) {
   // another, the more specific entry wins.
   const byLength = entries
     .filter((e, i) => entries.findIndex(o => o.name === e.name) === i)
-    .sort((a, b) => b.name.length - a.name.length)
+    .toSorted((a, b) => b.name.length - a.name.length)
 
   return { byLength, sections }
 }

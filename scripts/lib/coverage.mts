@@ -12,9 +12,9 @@ export function checkCoverageThresholds(
   summary: Record<keyof typeof coverageThresholds, { pct: number | string }>,
 ) {
   const failures: string[] = []
-  for (const metric of Object.keys(
-    coverageThresholds,
-  ) as (keyof typeof coverageThresholds)[]) {
+  for (const metric of Object.keys(coverageThresholds) as Array<
+    keyof typeof coverageThresholds
+  >) {
     const actual = summary[metric]?.pct
     const minimum = coverageThresholds[metric]
     if (
@@ -25,8 +25,9 @@ export function checkCoverageThresholds(
       failures.push(`${metric}: ${actual ?? 'missing'}% (minimum ${minimum}%)`)
     }
   }
-  if (failures.length)
+  if (failures.length) {
     throw new Error(`Coverage below threshold: ${failures.join(', ')}`)
+  }
 }
 
 // Browser engine coverage and Node adapter coverage have separate owners.
@@ -35,10 +36,12 @@ export function combineCoverage(wptData, nodeData, root) {
   const node = libCoverage.createCoverageMap(nodeData)
   const engine = path.join(root, 'src/nwsapi.js')
   const adapter = path.join(root, 'src/dom-selector.js')
-  if (!wpt.files().includes(engine))
+  if (!wpt.files().includes(engine)) {
     throw new Error('Missing WPT engine coverage')
-  if (!node.files().includes(adapter))
+  }
+  if (!node.files().includes(adapter)) {
     throw new Error('Missing Node adapter coverage')
+  }
   const combined = libCoverage.createCoverageMap({})
   combined.addFileCoverage(wpt.fileCoverageFor(engine))
   combined.addFileCoverage(node.fileCoverageFor(adapter))

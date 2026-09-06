@@ -14,9 +14,11 @@ const {
   rmSync,
   writeFileSync,
 } = require('node:fs')
-const { tmpdir } = require('node:os')
-const { dirname, resolve } = require('node:path')
-const directory = mkdtempSync(resolve(tmpdir(), 'nwsapi-jsdom-adapter-'))
+import os from 'node:os'
+import path from 'node:path'
+const directory = mkdtempSync(
+  path.resolve(os.tmpdir(), 'nwsapi-jsdom-adapter-'),
+)
 const isPnpm = process.env.npm_config_user_agent?.startsWith('pnpm/')
 const cli = process.env.npm_execpath
 const command =
@@ -38,7 +40,7 @@ try {
         directory,
       ],
       {
-        cwd: resolve(__dirname, '..'),
+        cwd: path.resolve(__dirname, '..'),
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'inherit'],
       },
@@ -49,7 +51,7 @@ try {
     ? packResult[0]
     : packResult.nwsapi || packResult
   assert.deepEqual(
-    packed.files.map(file => file.path).sort(),
+    packed.files.map(file => file.path).toSorted(),
     [
       'LICENSE',
       'README.md',
@@ -59,11 +61,11 @@ try {
       'src/modules/nwsapi-jquery.js',
       'src/modules/nwsapi-traversal.js',
       'src/nwsapi.js',
-    ].sort(),
+    ].toSorted(),
   )
   const tarball = packed.filename
   writeFileSync(
-    resolve(directory, 'package.json'),
+    path.resolve(directory, 'package.json'),
     JSON.stringify(
       {
         name: 'nwsapi-jsdom-adapter-test',
@@ -72,7 +74,8 @@ try {
         overrides: isPnpm
           ? undefined
           : {
-              '@asamuzakjp/dom-selector': 'file:' + resolve(directory, tarball),
+              '@asamuzakjp/dom-selector':
+                'file:' + path.resolve(directory, tarball),
             },
       },
       null,
@@ -81,9 +84,9 @@ try {
   )
   if (isPnpm) {
     writeFileSync(
-      resolve(directory, 'pnpm-workspace.yaml'),
+      path.resolve(directory, 'pnpm-workspace.yaml'),
       'overrides:\n  "@asamuzakjp/dom-selector": ' +
-        JSON.stringify('file:' + resolve(directory, tarball)) +
+        JSON.stringify('file:' + path.resolve(directory, tarball)) +
         '\n',
     )
   }
@@ -100,26 +103,28 @@ try {
     },
   )
   const jsdomPackage = realpathSync(
-    resolve(directory, 'node_modules/jsdom/package.json'),
+    path.resolve(directory, 'node_modules/jsdom/package.json'),
   )
-  const installed = resolve(
-    dirname(createRequire(jsdomPackage).resolve('@asamuzakjp/dom-selector')),
+  const installed = path.resolve(
+    path.dirname(
+      createRequire(jsdomPackage).resolve('@asamuzakjp/dom-selector'),
+    ),
     '..',
   )
   const metadata = JSON.parse(
-    readFileSync(resolve(installed, 'package.json'), 'utf8'),
+    readFileSync(path.resolve(installed, 'package.json'), 'utf8'),
   )
   assert.equal(metadata.main, './src/nwsapi')
   assert.equal(metadata.type, undefined)
   assert.equal(metadata.exports, undefined)
   const factory = require(installed)
   assert.equal(typeof factory, 'function')
-  assert.equal(factory, require(resolve(installed, 'src/nwsapi.js')))
+  assert.equal(factory, require(path.resolve(installed, 'src/nwsapi.js')))
   assert.equal(
     factory.DOMSelector,
-    require(resolve(installed, 'src/dom-selector.js')),
+    require(path.resolve(installed, 'src/dom-selector.js')),
   )
-  const vitest = resolve(
+  const vitest = path.resolve(
     require.resolve('vitest/package.json'),
     '../vitest.mjs',
   )
@@ -133,7 +138,7 @@ try {
       'test/jsdom-adapter.test.mts',
     ],
     {
-      cwd: resolve(__dirname, '..'),
+      cwd: path.resolve(__dirname, '..'),
       stdio: 'inherit',
       env: {
         ...process.env,

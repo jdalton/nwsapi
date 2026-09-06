@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { convert } from 'ast-v8-to-istanbul'
@@ -19,7 +19,7 @@ import {
 const { createCoverageMap } = libCoverage
 const { createContext } = libReport
 
-const raw = mkdtempSync(path.join(tmpdir(), 'nwsapi-wpt-coverage-'))
+const raw = mkdtempSync(path.join(os.tmpdir(), 'nwsapi-wpt-coverage-'))
 const run = (entry, args, env = process.env) =>
   execFileSync(process.execPath, [entry, ...args], {
     cwd: REPO_ROOT,
@@ -44,8 +44,9 @@ try {
     const entries = JSON.parse(
       readFileSync(path.join(raw, `${i}.json`), 'utf8'),
     )
-    if (!entries.length)
+    if (!entries.length) {
       throw new Error(`Missing WPT coverage: ${manifest[i].path}`)
+    }
     for (const entry of entries) {
       coverage.merge(
         await convert({
@@ -70,7 +71,9 @@ try {
     dir: path.join(REPO_ROOT, 'coverage'),
     coverageMap: combined,
   })
-  for (const name of coverageReporters()) reports.create(name).execute(context)
+  for (const name of coverageReporters()) {
+    reports.create(name).execute(context)
+  }
   checkCoverageThresholds(combined.getCoverageSummary())
   run('scripts/gen/coverage-badge.mts', [])
 } finally {

@@ -14,5 +14,12 @@
     "forceConsistentCasingInFileNames": true,
     "strict": false
   },
-  "include": ["../src/**/*.mts", "../scripts/**/*.mts", "../test/*.mts", "../test/upstream/*.mts", "./*.mts", "./*.d.ts"]
+  "include": [
+    "../src/**/*.mts",
+    "../scripts/**/*.mts",
+    "../test/*.mts",
+    "../test/upstream/*.mts",
+    "./*.mts",
+    "./*.d.ts"
+  ]
 }

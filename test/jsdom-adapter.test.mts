@@ -1,3 +1,4 @@
+import type { ConstructorOptions } from 'jsdom'
 import { test, vi } from 'vitest'
 import { createRequire } from 'node:module'
 
@@ -28,7 +29,7 @@ const { JSDOM } = jsdomRequire('jsdom')
 function host(
   t,
   html = '<!doctype html><section><div class="item" id="one"></div><div class="item" id="two"></div></section>',
-  options?: import('jsdom').ConstructorOptions,
+  options?: ConstructorOptions,
 ) {
   const dom = new JSDOM(html, options)
   t.onTestFinished(() => dom.window.close())
@@ -209,7 +210,9 @@ test('stylesheet syntax cache stays bounded and evicted selectors still work', t
   const window = host(t)
   const adapter = new DOMSelector(window)
   const node = window.document.body.firstElementChild
-  for (let i = 0; i < 300; i++) adapter.check('.item' + i, node)
+  for (let i = 0; i < 300; i++) {
+    adapter.check('.item' + i, node)
+  }
   assert.equal(adapter.selectors.size, 256)
   assert.equal(adapter.selectors.has('.item0'), false)
   node.className = 'item0'
@@ -231,7 +234,9 @@ test('a missing CSS peer only fails when stylesheet matching needs it', t => {
   const requireSpy = vi
     .spyOn(Module.prototype, 'require')
     .mockImplementation(function (name) {
-      if (this.filename === path && name === './nwsapi.js') factoryLoads++
+      if (this.filename === path && name === './nwsapi.js') {
+        factoryLoads++
+      }
       if (this.filename === path && name === 'css-tree') {
         loads++
         throw missing

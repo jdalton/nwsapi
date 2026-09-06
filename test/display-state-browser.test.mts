@@ -3,10 +3,10 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const assert = require('node:assert/strict')
 const { readFileSync } = require('node:fs')
-const { resolve } = require('node:path')
+import path from 'node:path'
 import { test } from 'vitest'
 const { chromium } = require('@playwright/test')
-const source = readFileSync(resolve(__dirname, '../src/nwsapi.js'), 'utf8')
+const source = readFileSync(path.resolve(__dirname, '../src/nwsapi.js'), 'utf8')
 
 test.skipIf(!process.env.NWSAPI_BROWSER)(
   'browser state stays live across factory shapes, documents, and install()',
@@ -26,26 +26,28 @@ test.skipIf(!process.env.NWSAPI_BROWSER)(
           await page.setContent(
             '<!doctype html><dialog></dialog><div popover></div><iframe></iframe>',
           )
-          const results = await page.evaluate(
-            ({ source, mode }) => {
+          const browserResults = await page.evaluate(
+            ({ source: browserSource, mode: browserMode }) => {
               // oxlint-disable-next-line typescript/unbound-method -- Called with its element receiver below.
               const native = Element.prototype.matches
               let nw
-              if (mode === 'document' || mode === 'window') {
+              if (browserMode === 'document' || browserMode === 'window') {
                 const module = {
                   exports: {} as (host: unknown) => typeof NW.Dom,
                 }
                 // oxlint-disable-next-line typescript/no-implied-eval -- Exercise the published CommonJS bootstrap in a browser realm.
-                new Function('module', 'exports', source)(
+                new Function('module', 'exports', browserSource)(
                   module,
                   module.exports,
                 )
                 nw = module.exports(
-                  mode === 'window' ? window : { document, DOMException },
+                  browserMode === 'window'
+                    ? window
+                    : { document, DOMException },
                 )
               } else {
                 // eslint-disable-next-line no-eval -- Exercise the built browser-global bootstrap.
-                ;(0, eval)(source)
+                ;(0, eval)(browserSource)
                 nw = NW.Dom
               }
               const other = document.querySelector('iframe').contentDocument
@@ -57,10 +59,12 @@ test.skipIf(!process.env.NWSAPI_BROWSER)(
                     doc.querySelector<HTMLElement>('[popover]'),
                   ] as const,
               )
-              if (mode === 'install-before') nw.install()
+              if (browserMode === 'install-before') {
+                nw.install()
+              }
               const results = []
               function check() {
-                for (let i = 0; i < 3; i++)
+                for (let i = 0; i < 3; i++) {
                   for (const [dialog, popover] of pairs) {
                     results.push([
                       nw.match(':modal', dialog),
@@ -71,9 +75,12 @@ test.skipIf(!process.env.NWSAPI_BROWSER)(
                       native.call(popover, ':popover-open'),
                     ])
                   }
+                }
               }
               check()
-              if (mode === 'install-after') nw.install()
+              if (browserMode === 'install-after') {
+                nw.install()
+              }
               for (const [dialog, popover] of pairs) {
                 dialog.showModal()
                 popover.showPopover()
@@ -88,9 +95,10 @@ test.skipIf(!process.env.NWSAPI_BROWSER)(
             },
             { source, mode },
           )
-          assert.ok(results.some(([, expected]) => expected === true))
-          for (const [actual, expected] of results)
+          assert.ok(browserResults.some(([, expected]) => expected === true))
+          for (const [actual, expected] of browserResults) {
             assert.equal(actual, expected)
+          }
         } finally {
           await page.close()
         }

@@ -21,7 +21,9 @@ test('host matcher delegation stays bounded', t => {
     node.matches = function (
       value,
     ): this is HTMLElement & SVGElement & MathMLElement {
-      if (++calls > 4) throw new Error('recursive host matcher')
+      if (++calls > 4) {
+        throw new Error('recursive host matcher')
+      }
       return engine.match(value, node)
     }
     expect(engine.match(selector, node), selector).toBe(false)

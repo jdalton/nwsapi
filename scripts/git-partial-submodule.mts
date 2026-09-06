@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * git-partial-submodule.mts
+ * Git-partial-submodule.mts.
  *
  * Dependency-free tool for the "pristine upstream" pins recorded in
  * .gitmodules. Upstream checkouts are gitignored and carry NO gitlink
@@ -9,11 +9,11 @@
  * `git ls-tree -r <ref>` manifest for tamper detection.
  *
  * Subcommands:
- *   clone [path...]           materialize (or update) each pinned checkout
- *   verify [path...]          check layout, HEAD, sparsity, worktree
- *                             cleanliness, and manifest hash; with --deep,
- *                             also run the entry's `verify` command
- *   restore-sparse [path...]  re-apply the declared sparse-checkout patterns
+ * clone [path...]           materialize (or update) each pinned checkout
+ * verify [path...]          check layout, HEAD, sparsity, worktree
+ * cleanliness, and manifest hash; with --deep,
+ * also run the entry's `verify` command
+ * restore-sparse [path...]  re-apply the declared sparse-checkout patterns.
  *
  * Every .gitmodules entry is validated before any value reaches a git
  * command line: `ref` must be a 40-char lowercase hex commit id, `url`
@@ -21,7 +21,7 @@
  * repository root, and sparse-checkout patterns must not start with "-".
  */
 import { execFileSync } from 'node:child_process'
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import {
   existsSync,
   lstatSync,
@@ -120,9 +120,11 @@ function tryGitText(cwd, args) {
 
 /**
  * Parse .gitmodules, tolerating comment lines and tab/space indentation.
- * A comment directly above a [submodule "..."] section in the form
- *   # <label> sha256:<64 hex>
- * supplies the entry's label and expected manifest hash. Other comments
+ * A comment directly above a [submodule "..."] section in the form.
+ *
+ * # <label> sha256:<64 hex>
+ *
+ * Supplies the entry's label and expected manifest hash. Other comments
  * (e.g. trailing "# no-release-tag: ..." notes) are ignored.
  */
 function parseGitmodules(filePath) {
@@ -407,9 +409,10 @@ function manifestSha256(dir, ref) {
     '-r',
     ref,
   ])
-  return createHash('sha256').update(stdout).digest('hex')
+  return crypto.createHash('sha256').update(stdout).digest('hex')
 }
 
+// oxlint-disable-next-line eslint/complexity -- Report each checkout invariant in one diagnostic result.
 function verifyEntry(entry) {
   const dir = checkoutDir(entry)
   const checks = []
@@ -440,9 +443,9 @@ function verifyEntry(entry) {
       .split('\n')
       .map(line => line.trim())
       .filter(Boolean)
-      .sort()
-    const declared = [...entry.sparsePatterns].sort((a: string, b: string) =>
-      a < b ? -1 : a > b ? 1 : 0,
+      .toSorted()
+    const declared = [...entry.sparsePatterns].toSorted(
+      (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0),
     )
     const sparseOk =
       listed.length === declared.length &&

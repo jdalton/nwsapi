@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-/** Generate or check the README coverage badge from the latest coverage run. */
+/**
+ * Generate or check the README coverage badge from the latest coverage run.
+ */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'

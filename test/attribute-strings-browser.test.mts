@@ -45,7 +45,7 @@ test.skipIf(!process.env.NWSAPI_BROWSER)(
     await page.addScriptTag({
       content: readFileSync(path.join(__dirname, '../src/nwsapi.js'), 'utf8'),
     })
-    const differences = await page.evaluate(cases => {
+    const browserDifferences = await page.evaluate(browserCases => {
       const nw = window.NW.Dom
       const target = document.getElementById('a')
       const differences = []
@@ -56,7 +56,7 @@ test.skipIf(!process.env.NWSAPI_BROWSER)(
           return { error: error.name }
         }
       }
-      for (const { selector, value } of cases) {
+      for (const { selector, value } of browserCases) {
         target.setAttribute('data-x', value)
         for (let pass = 0; pass < 2; ++pass) {
           const expected = [
@@ -78,7 +78,7 @@ test.skipIf(!process.env.NWSAPI_BROWSER)(
       }
       return differences
     }, cases)
-    assert.deepEqual(differences, [])
+    assert.deepEqual(browserDifferences, [])
     console.info(
       cases.length +
         ' selector cases; select, first and match; two passes; Chromium ' +

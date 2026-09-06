@@ -6,9 +6,9 @@ const require = createRequire(import.meta.url)
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const assert = require('node:assert/strict')
 const { readFileSync } = require('node:fs')
-const { join } = require('node:path')
+import path from 'node:path'
 const vm = require('node:vm')
-const source = readFileSync(join(__dirname, '../src/nwsapi.js'), 'utf8')
+const source = readFileSync(path.join(__dirname, '../src/nwsapi.js'), 'utf8')
 // A test-only hook exercises the internal allocator without adding public API.
 assert.equal(source.split('return Dom;').length, 2)
 const instrumented = source.replace(
@@ -94,11 +94,16 @@ for (const [name, value, legacy, available] of [
       const key = {}
       first.set(key, 42)
       assert.equal(first.get(key), 42)
-    } else assert.equal(first, undefined)
+    } else {
+      assert.equal(first, undefined)
+    }
     for (let i = 0; i < 50; i++) {
       const next = nw.testCreateWeakMap()
-      if (available) assert.notEqual(next, first)
-      else assert.equal(next, undefined)
+      if (available) {
+        assert.notEqual(next, first)
+      } else {
+        assert.equal(next, undefined)
+      }
     }
     assert.equal(
       reads,

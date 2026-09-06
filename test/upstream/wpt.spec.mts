@@ -158,7 +158,7 @@ function rewriteBaseline(filePath, failingKeys) {
     next[key] = current[key] || BASELINE_REASON
   }
   const sorted = Object.fromEntries(
-    Object.entries(next).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    Object.entries(next).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
   )
   writeFileSync(expectationsPath, `${JSON.stringify(sorted, null, 2)}\n`)
 }
@@ -167,6 +167,7 @@ function rewriteBaseline(filePath, failingKeys) {
 // One playwright test per manifest entry.
 // ---------------------------------------------------------------------------
 for (const entry of manifest) {
+  // oxlint-disable-next-line eslint/complexity -- Keep each page and its coverage lifecycle in one test.
   test(entry.path, async ({ page }) => {
     if (coverageDirectory) {
       await page.coverage.startJSCoverage({ resetOnNavigation: false })
@@ -190,7 +191,7 @@ for (const entry of manifest) {
       await page.waitForFunction(
         'typeof window.add_completion_callback === "function"',
         null,
-        { timeout: 5_000 },
+        { timeout: 5000 },
       )
     } catch {
       throw new Error(
@@ -217,7 +218,7 @@ for (const entry of manifest) {
     const results = await page.evaluate<{
       installError: string | null
       harness: { status: number; message: string | null }
-      tests: { name: string; status: number; message: string | null }[]
+      tests: Array<{ name: string; status: number; message: string | null }>
     }>('window.__wptResults')
     if (coverageDirectory) {
       const coverage = (await page.coverage.stopJSCoverage()).filter(

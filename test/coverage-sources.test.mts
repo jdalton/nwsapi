@@ -35,7 +35,7 @@ test('coverage uses WPT for the engine and Node for the adapter', () => {
     },
     root,
   )
-  expect(map.files().sort()).toEqual([adapter, engine])
+  expect(map.files().toSorted()).toEqual([adapter, engine])
   expect(map.fileCoverageFor(engine).toSummary().lines.pct).toBe(0)
   expect(map.fileCoverageFor(adapter).toSummary().lines.pct).toBe(100)
 })

@@ -12,6 +12,8 @@
  */
 import { createReadStream, existsSync, realpathSync } from 'node:fs'
 import { realpath, stat } from 'node:fs/promises'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { createServer } from 'node:http'
 import path from 'node:path'
 import process from 'node:process'
@@ -39,7 +41,7 @@ function resolvePort(raw) {
     return 8000
   }
   const parsed = Number(raw)
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65535) {
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65_535) {
     console.error(
       `Invalid PORT ${JSON.stringify(raw)}: expected an integer between 0 and 65535.`,
     )
@@ -79,10 +81,8 @@ const server = createServer((req, res) => {
   serve(req, res).catch(error => res.destroy(error))
 })
 
-async function serve(
-  req: import('node:http').IncomingMessage,
-  res: import('node:http').ServerResponse,
-) {
+// oxlint-disable-next-line eslint/complexity -- Keep request validation and response handling together.
+async function serve(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     send(res, 405, 'method not allowed')
     return
@@ -164,7 +164,7 @@ server.on('error', (err: NodeJS.ErrnoException) => {
 
 server.listen(port, '127.0.0.1', () => {
   console.log(
-    `WPT static server listening at http://localhost:${(server.address() as import('node:net').AddressInfo).port}/`,
+    `WPT static server listening at http://localhost:${(server.address() as AddressInfo).port}/`,
   )
   console.log(`  document root: ${docRoot}`)
   console.log(`  /_repo/       -> ${repoRoot}`)

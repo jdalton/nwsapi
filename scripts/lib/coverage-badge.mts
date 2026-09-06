@@ -268,11 +268,11 @@ const PAD = 10
  * Render a label/value badge SVG with a flat two-segment layout (grey label,
  * colored value). Pure, deterministic, and emitted pre-optimized:
  * integer/precision-2 numbers, no comments or metadata, no collapsible
- * whitespace — a fixpoint of the repo's svgo pass (the coverage-badge tests verify the renderer). Text uses the font-size-110 +
- * scale(.1) idiom with textLength so metrics are deterministic across
- * renderers. The generic core behind the coverage badge; repo scripts reuse it
- * for any other local badge so no README ever points at a third-party badge
- * host.
+ * whitespace — a fixpoint of the repo's svgo pass (the coverage-badge tests
+ * verify the renderer). Text uses the font-size-110 + scale(.1) idiom with
+ * textLength so metrics are deterministic across renderers. The generic core
+ * behind the coverage badge; repo scripts reuse it for any other local badge so
+ * no README ever points at a third-party badge host.
  */
 export function renderBadge(
   badgeLabel: string,

@@ -6,7 +6,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { test } from 'vitest'
 import { makeCoverageBadge } from '../scripts/gen/coverage-badge.mts'
@@ -17,7 +17,7 @@ import {
 } from '../scripts/lib/coverage-badge.mts'
 
 function fixture(t) {
-  const repoRoot = mkdtempSync(path.join(tmpdir(), 'nwsapi-coverage-'))
+  const repoRoot = mkdtempSync(path.join(os.tmpdir(), 'nwsapi-coverage-'))
   t.onTestFinished(() => rmSync(repoRoot, { recursive: true, force: true }))
   mkdirSync(path.join(repoRoot, 'coverage'))
   writeFileSync(

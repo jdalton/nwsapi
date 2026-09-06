@@ -25,7 +25,7 @@ for (const fallback of [false, true]) {
           value: undefined,
         })
         const reads = Object.fromEntries(aliases.map(name => [name, 0]))
-        for (const name of aliases)
+        for (const name of aliases) {
           Object.defineProperty(proto, name, {
             configurable: true,
             get() {
@@ -33,6 +33,7 @@ for (const fallback of [false, true]) {
               return name === alias ? () => true : undefined
             },
           })
+        }
         const node = document.createElement('div')
         node.setAttribute('popover', '')
         document.body.appendChild(node)
@@ -46,14 +47,17 @@ for (const fallback of [false, true]) {
         assert.equal(nw.match(':popover-open', node), legacy)
         const firstReads = { ...reads }
         assert.equal(reads[alias], legacy ? 1 : 0)
-        for (let i = 0; i < 50; i++)
+        for (let i = 0; i < 50; i++) {
           assert.equal(nw.match(':popover-open', node), legacy)
+        }
         assert.deepEqual(
           reads,
           firstReads,
           'cached documents must not repeat alias lookup',
         )
-        if (!legacy) assert.ok(Object.values(reads).every(count => count === 0))
+        if (!legacy) {
+          assert.ok(Object.values(reads).every(count => count === 0))
+        }
       })
     }
   }
@@ -68,7 +72,7 @@ test('legacy mode caches an absent matcher without rereading the factory prototy
     value: undefined,
   })
   const reads = Object.fromEntries(aliases.map(name => [name, 0]))
-  for (const alias of aliases)
+  for (const alias of aliases) {
     Object.defineProperty(proto, alias, {
       configurable: true,
       get() {
@@ -76,6 +80,7 @@ test('legacy mode caches an absent matcher without rereading the factory prototy
         return undefined
       },
     })
+  }
   const nw = createNwsapi(dom.window)
   nw.configure({ LEGACY: true })
   for (let i = 0; i < 50; i++) {
@@ -84,7 +89,9 @@ test('legacy mode caches an absent matcher without rereading the factory prototy
       false,
     )
   }
-  for (const alias of aliases) assert.equal(reads[alias], 1)
+  for (const alias of aliases) {
+    assert.equal(reads[alias], 1)
+  }
 })
 
 for (const legacy of [false, true]) {
@@ -94,7 +101,7 @@ for (const legacy of [false, true]) {
     const proto = dom.window.Element.prototype
     proto.matches = () => true
     let reads = 0
-    for (const alias of aliases)
+    for (const alias of aliases) {
       Object.defineProperty(proto, alias, {
         configurable: true,
         get() {
@@ -102,6 +109,7 @@ for (const legacy of [false, true]) {
           return () => false
         },
       })
+    }
     const nw = createNwsapi(dom.window)
     nw.configure({ LEGACY: legacy })
     assert.equal(

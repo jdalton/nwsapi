@@ -11,7 +11,7 @@ import {
   rmSync,
   symlinkSync,
 } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { REPO_ROOT } from '../scripts/lib/paths.mts'
 
@@ -27,7 +27,7 @@ test('local CI selects the workflow explicitly on feature branches', () => {
 })
 
 test('type checks pass without build outputs or an incremental cache', t => {
-  const root = mkdtempSync(path.join(tmpdir(), 'nwsapi-typecheck-'))
+  const root = mkdtempSync(path.join(os.tmpdir(), 'nwsapi-typecheck-'))
   t.onTestFinished(() => rmSync(root, { recursive: true, force: true }))
   const files = globSync(
     [

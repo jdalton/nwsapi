@@ -34,7 +34,9 @@ test('autofill retains alias fallback without recursive host calls', t => {
   Object.defineProperty(input, 'matches', {
     configurable: true,
     value(selector) {
-      if (selector === ':autofill') throw new Error('unsupported')
+      if (selector === ':autofill') {
+        throw new Error('unsupported')
+      }
       return selector === ':-webkit-autofill'
     },
   })
@@ -42,7 +44,9 @@ test('autofill retains alias fallback without recursive host calls', t => {
   let calls = 0
   Object.defineProperty(input, 'matches', {
     value(selector) {
-      if (++calls > 4) throw new Error('unbounded recursion')
+      if (++calls > 4) {
+        throw new Error('unbounded recursion')
+      }
       return engine.match(selector, input)
     },
   })

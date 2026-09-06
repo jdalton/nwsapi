@@ -7,7 +7,7 @@ const factory = require('../src/nwsapi.js')
 
 const markup =
   '<!doctype html><body><div id="d" data-v="a,b"><p id="p" class="a,b">x</p></div><p id="q"></p>'
-const cases: [string, string[]][] = [
+const cases: Array<[string, string[]]> = [
   ['p:is(svg|p, p)', ['p', 'q']],
   ['div:is(svg|div, #d)', ['d']],
   [':where(svg|p, p)', ['p', 'q']],
@@ -103,9 +103,12 @@ test(
       })
       for (const [selector, expected] of cases) {
         const result = await page.evaluate(
-          selector => ({
-            native: Array.from(document.querySelectorAll(selector), e => e.id),
-            nwsapi: NW.Dom.select(selector, document).map(e => e.id),
+          browserSelector => ({
+            native: Array.from(
+              document.querySelectorAll(browserSelector),
+              e => e.id,
+            ),
+            nwsapi: NW.Dom.select(browserSelector, document).map(e => e.id),
           }),
           selector,
         )

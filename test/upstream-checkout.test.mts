@@ -15,7 +15,7 @@ const {
   symlinkSync,
   writeFileSync,
 } = require('node:fs')
-const { devNull, tmpdir } = require('node:os')
+import os from 'node:os'
 const path = require('node:path')
 
 const helper = path.resolve(__dirname, '../scripts/git-partial-submodule.mts')
@@ -23,11 +23,11 @@ const pin = '1234567890123456789012345678901234567890'
 const fixtureEnv = {
   ...process.env,
   GIT_CONFIG_NOSYSTEM: '1',
-  GIT_CONFIG_GLOBAL: devNull,
+  GIT_CONFIG_GLOBAL: os.devNull,
 }
 
 function fixture(t) {
-  const base = mkdtempSync(path.join(tmpdir(), 'nwsapi-checkout-'))
+  const base = mkdtempSync(path.join(os.tmpdir(), 'nwsapi-checkout-'))
   t.onTestFinished(() => rmSync(base, { recursive: true, force: true }))
   const root = path.join(base, 'project')
   const outside = path.join(base, 'outside')
