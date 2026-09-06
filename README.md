@@ -112,10 +112,10 @@ Pass a CSS selector as `selector` and a DOM node as `context`.
 
 | Method | Result |
 | --- | --- |
-| `select(selector, context)` | Returns all matching descendants as an array. Returns an empty array if none match. |
-| `first(selector, context)` | Returns the first matching descendant, or `null`. |
-| `match(selector, element)` | Returns `true` if the element matches, or `false`. |
-| `ancestor(selector, element)` | Checks the element, then its parents. Returns the nearest match, or `null`. |
+| <code>select(selector,&nbsp;context)</code> | Returns an array of matching descendants, or `[]` if none match. |
+| <code>first(selector,&nbsp;context)</code> | Returns the first matching descendant, or `null`. |
+| <code>match(selector,&nbsp;element)</code> | Returns `true` if the element matches, or `false`. |
+| <code>ancestor(selector,&nbsp;element)</code> | Returns the nearest match, starting with the element, or `null`. |
 
 These methods accept an optional third argument, `callback`, which runs for matching elements.
 
