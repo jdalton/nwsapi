@@ -44,10 +44,10 @@ Use `configure({ option: value })` to change options, `configure()` to read them
 | `USR_EVENT` | `true` | Reserved compatibility flag. The core does not currently read it. |
 | `VERBOSITY` | `true` | Throws exceptions for invalid selectors. |
 
+</details>
+
 > [!IMPORTANT]
 > Set `LEGACY` before the first query when the environment needs compatibility fallbacks.
-
-</details>
 
 <details>
 <summary>Compiler data and caches</summary>

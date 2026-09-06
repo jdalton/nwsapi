@@ -12,6 +12,31 @@ import {
 const engine = readFileSync(ENGINE_SOURCE_PATH, 'utf8')
 const adapter = readFileSync(ADAPTER_SOURCE_PATH, 'utf8')
 
+for (const [name, markdown] of [
+  ['API', renderApiMarkdown(engine, adapter)],
+  ['README', readFileSync(new URL('../README.md', import.meta.url), 'utf8')],
+]) {
+  test(`${name} keeps GitHub alerts outside collapsed sections`, () => {
+    let depth = 0
+    let alerts = 0
+    for (const line of markdown.split('\n')) {
+      if (line === '<details>') {
+        depth++
+      }
+      if (line === '</details>') {
+        depth--
+      }
+      if (line === '> [!IMPORTANT]') {
+        expect(depth).toBe(0)
+        alerts++
+      }
+    }
+    expect(depth).toBe(0)
+    expect(alerts).toBe(1)
+    expect(markdown).toMatch(/\n\n> \[!IMPORTANT\]\n> Set `LEGACY`/)
+  })
+}
+
 test('the API reference matches the source exports without running the factory', () => {
   const output = renderApiMarkdown(engine, adapter)
   expect(output).toBe(readFileSync(API_DOC_PATH, 'utf8'))
