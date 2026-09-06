@@ -30,7 +30,12 @@
  * - /css/selectors/focus-… hover-… active-… and friends — need real user
  *   interaction (testdriver) or rendering state.
  */
-export const manifest = [
+export const manifest: { path: string; note: string; install?: boolean }[] = [
+  {
+    path: '/_repo/test/upstream/fixtures/matcher-cache.html',
+    note: 'local regression using the upstream WPT harness: host matcher replacement, recursion, legacy configuration, and document switching',
+    install: false,
+  },
   {
     path: '/dom/nodes/ParentNode-querySelector-All.html',
     note: 'main Selectors-API suite: invalid/valid selectors from selectors.js across document/element/fragment/detached contexts',

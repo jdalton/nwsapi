@@ -171,7 +171,12 @@ for (const entry of manifest) {
     if (coverageDirectory) {
       await page.coverage.startJSCoverage({ resetOnNavigation: false })
     }
-    await page.addInitScript({ content: initScript })
+    await page.addInitScript({
+      content:
+        entry.install === false
+          ? initScript.replace('window.NW.Dom.install();', '')
+          : initScript,
+    })
     const response = await page.goto(entry.path)
     expect(response, `no HTTP response for ${entry.path}`).not.toBeNull()
     expect(
@@ -198,7 +203,9 @@ for (const entry of manifest) {
     // NW-install canary: nwsapi's querySelectorAll returns an Array, the
     // native engine a NodeList. Catches a silently-broken install().
     const nwInstalled = await page.evaluate(
-      'Array.isArray(document.querySelectorAll("html"))',
+      entry.install === false
+        ? 'typeof window.NW.Dom.match === "function"'
+        : 'Array.isArray(document.querySelectorAll("html"))',
     )
     expect(
       nwInstalled,
