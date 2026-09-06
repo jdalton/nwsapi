@@ -188,7 +188,7 @@ The engine compiles selectors into JavaScript functions and caches those functio
 
 ## Contribute
 
-See the contributor requirements in [package.json](package.json).
+Use Node.js 26 and pnpm ≥ 12.3.4 to contribute.
 
 ```sh
 pnpm install
