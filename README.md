@@ -188,8 +188,7 @@ The engine compiles selectors into JavaScript functions and caches those functio
 
 ## Contribute
 
-Use Node.js 26 and pnpm ≥ 12.3.4. pnpm 11.25.0 and later v11 releases also work.
-These requirements apply to contributors, not package consumers.
+See the contributor requirements in [package.json](package.json).
 
 ```sh
 pnpm install
