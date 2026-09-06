@@ -87,20 +87,39 @@ These exports support extensions and debugging. Prefer query methods and `config
 Access the adapter as `require("nwsapi").DOMSelector` or `require("nwsapi/src/dom-selector.js")`.
 jsdom calls these methods through the package override. Query options can set `noexcept: true` to suppress selector errors.
 
+Configure before parsing, because styles and scripts can use selectors during document creation:
+
+```js
+const { DOMSelector } = require("nwsapi")
+const { JSDOM } = require("jsdom")
+const dom = new JSDOM(html, {
+  beforeParse(window) {
+    DOMSelector.configure(window, { LEGACY: true })
+  }
+})
+```
+
+To reuse an engine, create a document without styles, then call `DOMSelector.use(window, engine)` before adding styles or running queries. The engine must belong to that document and have `VERBOSITY: true`. DOM queries throw for invalid selectors; stylesheet checks return no match.
+
+Setup locks on the first query, selector support check, or stylesheet match. Do not change the shared engine configuration directly after setup: jsdom can cache computed styles. Separate factory calls remain independent. Compatible adapter copies share setup even when the package override loads a second copy.
+
 | Method | Result |
 | --- | --- |
-| [`check(selector, node)`](../src/dom-selector.mts#L151) | Returns matching stylesheet branches and their syntax tree. Loads `css-tree` on first use. |
-| [`clear(clearAll = false)`](../src/dom-selector.mts#L87) | Clears compiled selectors and parsed stylesheet selectors when `clearAll` is `true`. |
-| [`closest(selector, node, options)`](../src/dom-selector.mts#L75) | Returns the nearest matching element, or `null`. |
-| [`constructor(window, document = window.document, options = {})`](../src/dom-selector.mts#L26) | Creates the adapter. `options.idlUtils` supports jsdom implementation nodes. |
-| [`extractSubjects()`](../src/dom-selector.mts#L98) | Returns a wildcard candidate description for stylesheet matching. |
-| [`matches(selector, node, options)`](../src/dom-selector.mts#L71) | Returns whether an element matches. |
-| [`parse(selector)`](../src/dom-selector.mts#L116) | Internal helper that caches stylesheet syntax after `css-tree` is loaded. |
-| [`querySelector(selector, node, options)`](../src/dom-selector.mts#L79) | Returns the first matching descendant, or `null`. |
-| [`querySelectorAll(selector, node, options)`](../src/dom-selector.mts#L83) | Returns matching descendants as an array. |
-| [`run(method, selector, node, options, fallback, elementOnly = false)`](../src/dom-selector.mts#L45) | Internal helper that checks nodes and applies the query error policy. |
-| [`supports(selector)`](../src/dom-selector.mts#L104) | Returns whether the engine accepts a selector. |
-| [`wrap(node)`](../src/dom-selector.mts#L41) | Internal helper that converts jsdom implementation nodes to public nodes. |
+| [`check(selector, node)`](../src/dom-selector.mts#L258) | Returns matching stylesheet branches and their syntax tree. Loads `css-tree` on first use. |
+| [`clear(clearAll = false)`](../src/dom-selector.mts#L194) | Clears compiled selectors and parsed stylesheet selectors when `clearAll` is `true`. |
+| [`closest(selector, node, options)`](../src/dom-selector.mts#L182) | Returns the nearest matching element, or `null`. |
+| [`DOMSelector.configure(window, options)`](../src/dom-selector.mts#L68) | Configures the shared engine before the first query or stylesheet match. |
+| [`constructor(window, document = window.document, options = {})`](../src/dom-selector.mts#L120) | Creates the adapter. `options.idlUtils` supports jsdom implementation nodes. |
+| [`engine`](../src/dom-selector.mts#L131) | Returns the shared engine, creating it on first access. |
+| [`extractSubjects()`](../src/dom-selector.mts#L205) | Returns a wildcard candidate description for stylesheet matching. |
+| [`matches(selector, node, options)`](../src/dom-selector.mts#L178) | Returns whether an element matches. |
+| [`parse(selector)`](../src/dom-selector.mts#L223) | Internal helper that caches stylesheet syntax after `css-tree` is loaded. |
+| [`querySelector(selector, node, options)`](../src/dom-selector.mts#L186) | Returns the first matching descendant, or `null`. |
+| [`querySelectorAll(selector, node, options)`](../src/dom-selector.mts#L190) | Returns matching descendants as an array. |
+| [`run(method, selector, node, options, fallback, elementOnly = false)`](../src/dom-selector.mts#L152) | Internal helper that checks nodes and applies the query error policy. |
+| [`supports(selector)`](../src/dom-selector.mts#L211) | Returns whether the engine accepts a selector. |
+| [`DOMSelector.use(window, engine)`](../src/dom-selector.mts#L90) | Binds an existing engine before jsdom first uses the adapter. Returns the engine. |
+| [`wrap(node)`](../src/dom-selector.mts#L148) | Internal helper that converts jsdom implementation nodes to public nodes. |
 
 </details>
 

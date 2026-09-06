@@ -61,6 +61,9 @@ const descriptions: Record<string, string> = {
   selectResolvers: 'Caches selection plans, not DOM results.',
 }
 const adapterDescriptions: Record<string, string> = {
+  configure:
+    'Configures the shared engine before the first query or stylesheet match.',
+  engine: 'Returns the shared engine, creating it on first access.',
   constructor:
     'Creates the adapter. `options.idlUtils` supports jsdom implementation nodes.',
   check:
@@ -74,6 +77,7 @@ const adapterDescriptions: Record<string, string> = {
   querySelector: 'Returns the first matching descendant, or `null`.',
   querySelectorAll: 'Returns matching descendants as an array.',
   supports: 'Returns whether the engine accepts a selector.',
+  use: 'Binds an existing engine before jsdom first uses the adapter. Returns the engine.',
   parse:
     'Internal helper that caches stylesheet syntax after `css-tree` is loaded.',
   run: 'Internal helper that checks nodes and applies the query error policy.',
@@ -222,7 +226,13 @@ export function renderApiMarkdown(
         name,
         text: row(
           name,
-          signature(name, node.value, adapterSource),
+          node.kind === 'get'
+            ? name
+            : signature(
+                node.static ? `DOMSelector.${name}` : name,
+                node.value,
+                adapterSource,
+              ),
           adapterDescriptions[name],
           'src/dom-selector.mts',
           node.loc.start.line,
@@ -341,6 +351,22 @@ export function renderApiMarkdown(
     '',
     'Access the adapter as `require("nwsapi").DOMSelector` or `require("nwsapi/src/dom-selector.js")`.',
     'jsdom calls these methods through the package override. Query options can set `noexcept: true` to suppress selector errors.',
+    '',
+    'Configure before parsing, because styles and scripts can use selectors during document creation:',
+    '',
+    '```js',
+    'const { DOMSelector } = require("nwsapi")',
+    'const { JSDOM } = require("jsdom")',
+    'const dom = new JSDOM(html, {',
+    '  beforeParse(window) {',
+    '    DOMSelector.configure(window, { LEGACY: true })',
+    '  }',
+    '})',
+    '```',
+    '',
+    'To reuse an engine, create a document without styles, then call `DOMSelector.use(window, engine)` before adding styles or running queries. The engine must belong to that document and have `VERBOSITY: true`. DOM queries throw for invalid selectors; stylesheet checks return no match.',
+    '',
+    'Setup locks on the first query, selector support check, or stylesheet match. Do not change the shared engine configuration directly after setup: jsdom can cache computed styles. Separate factory calls remain independent. Compatible adapter copies share setup even when the package override loads a second copy.',
     '',
     '| Method | Result |',
     '| --- | --- |',

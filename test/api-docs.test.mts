@@ -52,6 +52,8 @@ test('the API reference matches the source exports without running the factory',
   expect(output).not.toContain('`ancestor(')
   expect(output).toContain('`USR_EVENT` | `true`')
   expect(output).toContain('require("nwsapi").DOMSelector')
+  expect(output).toContain('`DOMSelector.configure(window, options)`')
+  expect(output).toContain('`DOMSelector.use(window, engine)`')
   expect(output.indexOf('`byClass(')).toBeLessThan(output.indexOf('`byId('))
   expect(
     renderApiMarkdown('throw new Error("do not execute");\n' + engine, adapter),
