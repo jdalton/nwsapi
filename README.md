@@ -15,55 +15,6 @@ See the [supported selectors](https://github.com/dperini/nwsapi/wiki/CSS-support
 pnpm add nwsapi
 ```
 
-## Use in a browser
-
-Copy `src/nwsapi.js` from the package into your project. Set the script path to that file.
-
-```html
-<script src="nwsapi.js"></script>
-<script>
-  const items = NW.Dom.select('.item', document)
-  const firstItem = NW.Dom.first('.item', document)
-</script>
-```
-
-<details>
-<summary>Replace native selector methods</summary>
-
-`install()` changes selector methods such as `querySelectorAll()` and `matches()` for the page.
-Use it only when you want those methods to call NWSAPI.
-
-```js
-NW.Dom.install()
-// Restore the original methods when they are no longer needed.
-NW.Dom.uninstall()
-```
-
-</details>
-
-<details>
-<summary>Use the factory in Node.js</summary>
-
-Node.js does not provide a DOM. This example creates one with jsdom.
-
-```sh
-pnpm add nwsapi jsdom
-```
-
-```js
-const { JSDOM } = require('jsdom')
-const createNwsapi = require('nwsapi')
-const { window } = new JSDOM('<p class="item">Hello</p>')
-const nw = createNwsapi(window)
-
-const items = nw.select('.item', window.document)
-window.close()
-```
-
-This example calls NWSAPI directly. It does not replace jsdom's selector engine.
-
-</details>
-
 ## Use the jsdom adapter
 
 Use nwsapi ≥ 2.3.0 with jsdom ≥ 27. The adapter replaces jsdom's selector engine for queries and stylesheet matching.
@@ -102,6 +53,55 @@ Replace `<version>` with the published nwsapi version you want to use.
 
 Install dependencies after the change.
 The override does not change the NWSAPI factory API or add selector support.
+
+</details>
+
+<details>
+<summary>Use the factory in Node.js</summary>
+
+Node.js does not provide a DOM. This example creates one with jsdom.
+
+```sh
+pnpm add nwsapi jsdom
+```
+
+```js
+const { JSDOM } = require('jsdom')
+const createNwsapi = require('nwsapi')
+const { window } = new JSDOM('<p class="item">Hello</p>')
+const nw = createNwsapi(window)
+
+const items = nw.select('.item', window.document)
+window.close()
+```
+
+This example calls NWSAPI directly. It does not replace jsdom's selector engine.
+
+</details>
+
+## Use in a browser
+
+Copy `src/nwsapi.js` from the package into your project. Set the script path to that file.
+
+```html
+<script src="nwsapi.js"></script>
+<script>
+  const items = NW.Dom.select('.item', document)
+  const firstItem = NW.Dom.first('.item', document)
+</script>
+```
+
+<details>
+<summary>Replace native selector methods</summary>
+
+`install()` changes selector methods such as `querySelectorAll()` and `matches()` for the page.
+Use it only when you want those methods to call NWSAPI.
+
+```js
+NW.Dom.install()
+// Restore the original methods when they are no longer needed.
+NW.Dom.uninstall()
+```
 
 </details>
 
@@ -201,9 +201,7 @@ Node tests do not need a browser or a WPT checkout.
 <summary>Check changes before a push</summary>
 
 ```sh
-pnpm run lint
-pnpm run format:check
-pnpm run type
+pnpm run check
 pnpm run test:package
 ```
 
