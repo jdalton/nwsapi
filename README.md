@@ -77,7 +77,9 @@ scripts need explicit approval. These requirements apply to contributors, not
 library consumers.
 CI runs lint, formatting checks, Node tests, the build and WPT in one Node.js 26 job.
 
-The coverage badge starts as `n/a`; `pnpm run test:coverage` measures and updates it.
+`pnpm run test:coverage` measures the engine with WPT in Chromium and the adapter
+with Node tests, then updates the badge. It needs the WPT checkout and Chromium
+(see setup below). Known WPT failures remain visible in the test report.
 
 ```sh
 pnpm install

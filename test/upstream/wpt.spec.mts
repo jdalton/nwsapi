@@ -43,6 +43,17 @@ const nwsapiSource = readFileSync(
   'utf8',
 )
 const expectationsPath = path.join(here, 'expectations.json')
+const coverageDirectory = process.env.WPT_COVERAGE_DIR
+const coverageURL = 'http://nwsapi.test/src/nwsapi.js'
+if (
+  coverageDirectory &&
+  (process.env.NWSAPI_MINIFIED ||
+    process.env.WPT_FILTER ||
+    process.env.WPT_SECTION ||
+    process.env.WPT_UPDATE_EXPECTATIONS)
+) {
+  throw new Error('WPT coverage requires the complete, unminified suite.')
+}
 const expectations = JSON.parse(readFileSync(expectationsPath, 'utf8'))
 
 const updateExpectations = !!process.env.WPT_UPDATE_EXPECTATIONS
@@ -98,7 +109,11 @@ if (filter.active && updateExpectations) {
 // ---------------------------------------------------------------------------
 // Init script: nwsapi + install + testharness completion hook.
 // ---------------------------------------------------------------------------
-const initScript = `${nwsapiSource}
+// A named script separates engine coverage from the harness, including frames.
+const engineScript = coverageDirectory
+  ? `(0, eval)(${JSON.stringify(`${nwsapiSource}\n//# sourceURL=${coverageURL}`)});`
+  : nwsapiSource
+const initScript = `${engineScript}
 ;(function () {
   try {
     window.NW.Dom.install();
@@ -153,6 +168,9 @@ function rewriteBaseline(filePath, failingKeys) {
 // ---------------------------------------------------------------------------
 for (const entry of manifest) {
   test(entry.path, async ({ page }) => {
+    if (coverageDirectory) {
+      await page.coverage.startJSCoverage({ resetOnNavigation: false })
+    }
     await page.addInitScript({ content: initScript })
     const response = await page.goto(entry.path)
     expect(response, `no HTTP response for ${entry.path}`).not.toBeNull()
@@ -190,6 +208,19 @@ for (const entry of manifest) {
     // String expressions: these evaluate in the page, where `window` exists.
     await page.waitForFunction('window.__wptResults', null, { timeout: 80_000 })
     const results = await page.evaluate('window.__wptResults')
+    if (coverageDirectory) {
+      const coverage = (await page.coverage.stopJSCoverage()).filter(
+        script => script.url === coverageURL,
+      )
+      expect(
+        coverage.length,
+        'WPT must execute the named nwsapi script',
+      ).toBeGreaterThan(0)
+      writeFileSync(
+        path.join(coverageDirectory, `${manifest.indexOf(entry)}.json`),
+        JSON.stringify(coverage),
+      )
+    }
 
     expect(results.installError, 'NW.Dom.install() must not throw').toBeNull()
 

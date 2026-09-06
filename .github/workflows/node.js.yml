@@ -19,11 +19,11 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
-      - run: npm run test:coverage
-      - run: npm run check:coverage
       - run: npm run test:package
       - run: npm run upstream:clone
       - run: npm run upstream:verify
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:coverage
+      - run: npm run check:coverage
       - run: npm run test:browser
-      - run: npm run test:upstream
+      - run: NWSAPI_MINIFIED=1 npm run test:upstream
