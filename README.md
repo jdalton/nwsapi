@@ -3,7 +3,7 @@
 Fast CSS Selectors API Engine
 
 <a href="https://badge.socket.dev/npm/package/nwsapi"><img src="https://badge.socket.dev/npm/package/nwsapi" alt="Socket Badge" height="20"></a>
-<img src="https://raw.githubusercontent.com/dperini/nwsapi/HEAD/assets/repo/coverage.svg" width="90" height="20" alt="Coverage" />
+<img src="https://raw.githubusercontent.com/dperini/nwsapi/HEAD/assets/repo/coverage.svg" width="97" height="20" alt="Coverage" />
 
 NWSAPI is the development progress of [NWMATCHER](https://github.com/dperini/nwmatcher) aiming at [Selectors Level 4](https://www.w3.org/TR/selectors-4/) conformance. It has been completely reworked to be easily extended and maintained. It is a right-to-left selector parser and compiler written in pure Javascript with no external dependencies. It was initially thought as a cross browser library to improve event delegation and web page scraping in various frameworks but it has become a popular replacement of the native CSS selection and matching functionality in newer browsers and headless environments.
 
