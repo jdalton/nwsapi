@@ -21,8 +21,15 @@ function fixture(t) {
     process.exitCode = Number(process.env.CACHE_TEST_EXIT || 0)
   `,
   )
-  return (env: NodeJS.ProcessEnv = {}, args: string[] = []) => {
-    const environment = { ...process.env, ...env }
+  return (
+    env: NodeJS.ProcessEnv = { __proto__: null },
+    args: string[] = [],
+  ) => {
+    const environment: NodeJS.ProcessEnv = {
+      __proto__: null,
+      ...process.env,
+      ...env,
+    }
     for (const key of [
       'NODE_COMPILE_CACHE',
       'NODE_DISABLE_COMPILE_CACHE',

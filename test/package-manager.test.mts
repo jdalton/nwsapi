@@ -9,7 +9,7 @@ import { REPO_ROOT } from '../scripts/lib/paths.mts'
 
 for (const agent of [undefined, 'pnpm/12.3.4', 'aube/1.0.0']) {
   test(`the launcher permits ${agent ?? 'direct Node invocation'}`, () => {
-    const env = { ...process.env }
+    const env: NodeJS.ProcessEnv = { __proto__: null, ...process.env }
     if (agent) {
       env.npm_config_user_agent = agent
     } else {
@@ -31,7 +31,10 @@ for (const agent of [undefined, 'pnpm/12.3.4', 'aube/1.0.0']) {
 
 for (const name of ['npm', 'yarn', 'bun', 'vlt', 'aube', 'pnpm'] as const) {
   test(`recognizes ${name} from the leading user-agent token`, () => {
-    const env = { npm_config_user_agent: `${name}/1.0.0 npm/? node/v26` }
+    const env = {
+      __proto__: null,
+      npm_config_user_agent: `${name}/1.0.0 npm/? node/v26`,
+    }
     expect(invokingPackageManager(env)).toBe(name)
     expect(invokedByForeignPackageManager(env)).toBe(
       !['aube', 'pnpm'].includes(name),
@@ -71,6 +74,7 @@ for (const name of ['npm', 'yarn', 'bun', 'vlt', 'cnpm']) {
         cwd: REPO_ROOT,
         encoding: 'utf8',
         env: {
+          __proto__: null,
           ...process.env,
           npm_config_user_agent: `${name}/1.0.0`,
           npm_lifecycle_event: 'build',
