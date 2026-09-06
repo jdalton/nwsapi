@@ -112,10 +112,10 @@ Pass a CSS selector as `selector` and a DOM node as `context`.
 
 | Method | Result |
 | --- | --- |
-| <code>select(selector,&nbsp;context)</code> | Returns an array of matching descendants, or `[]` if none match. |
+| <code>ancestor(selector,&nbsp;element)</code> | Returns the nearest match, starting with the element, or `null`. |
 | <code>first(selector,&nbsp;context)</code> | Returns the first matching descendant, or `null`. |
 | <code>match(selector,&nbsp;element)</code> | Returns `true` if the element matches, or `false`. |
-| <code>ancestor(selector,&nbsp;element)</code> | Returns the nearest match, starting with the element, or `null`. |
+| <code>select(selector,&nbsp;context)</code> | Returns an array of matching descendants, or `[]` if none match. |
 
 These methods accept an optional third argument, `callback`, which runs for matching elements.
 
@@ -125,9 +125,9 @@ These methods accept an optional third argument, `callback`, which runs for matc
 Pass the search context as the second argument. These helpers return arrays by default.
 
 ```js
+NW.Dom.byClass('item', document)
 NW.Dom.byId('content', document)
 NW.Dom.byTag('p', document)
-NW.Dom.byClass('item', document)
 ```
 
 `byId()` can return multiple elements when the document contains duplicate IDs.
