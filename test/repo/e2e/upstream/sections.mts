@@ -20,12 +20,10 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { REPO_ROOT } from '../../../../scripts/repo/lib/paths.mts'
 
-const here = path.dirname(fileURLToPath(import.meta.url))
 const selectorsJsPath = path.resolve(
-  here,
-  '..',
-  '..',
+  REPO_ROOT,
   'upstream',
   'wpt',
   'dom',

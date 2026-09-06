@@ -175,19 +175,19 @@ class DOMSelector {
     }
   }
 
-  matches(selector, node, options) {
+  matches(selector, node, options?) {
     return this.run('match', selector, node, options, false, true)
   }
 
-  closest(selector, node, options) {
+  closest(selector, node, options?) {
     return this.run('closest', selector, node, options, null, true)
   }
 
-  querySelector(selector, node, options) {
+  querySelector(selector, node, options?) {
     return this.run('first', selector, node, options, null)
   }
 
-  querySelectorAll(selector, node, options) {
+  querySelectorAll(selector, node, options?) {
     return this.run('select', selector, node, options, [])
   }
 

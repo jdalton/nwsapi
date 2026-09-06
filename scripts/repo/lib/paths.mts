@@ -2,7 +2,9 @@ import path from 'node:path'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 
-export const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url))
+export const REPO_ROOT = path.resolve(
+  fileURLToPath(new URL('../../../', import.meta.url)),
+)
 export const IMPORTANT_ICON_REL_PATH = 'assets/repo/important.svg'
 export const SVG_CHECK_SCRIPT_PATH = path.join(
   REPO_ROOT,
