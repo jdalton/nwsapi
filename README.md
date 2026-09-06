@@ -151,7 +151,8 @@ const options = NW.Dom.configure()
 | `NODE_LIST` | `false` | Uses NodeList-style results instead of arrays where supported. |
 | `VERBOSITY` | `true` | Throws exceptions for invalid selectors. |
 
-Set `LEGACY` before the first query when the environment needs compatibility fallbacks.
+> [!IMPORTANT]
+> Set `LEGACY` before the first query when the environment needs compatibility fallbacks.
 
 </details>
 
