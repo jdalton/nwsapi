@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
+import { JSDOM } from 'jsdom'
 import { expect, test } from 'vitest'
 import { renderApiMarkdown, writeApiMarkdown } from '../scripts/gen/api-md.mts'
 import {
@@ -16,24 +17,28 @@ for (const [name, markdown] of [
   ['API', renderApiMarkdown(engine, adapter)],
   ['README', readFileSync(new URL('../README.md', import.meta.url), 'utf8')],
 ]) {
-  test(`${name} keeps GitHub alerts outside collapsed sections`, () => {
-    let depth = 0
-    let alerts = 0
-    for (const line of markdown.split('\n')) {
-      if (line === '<details>') {
-        depth++
-      }
-      if (line === '</details>') {
-        depth--
-      }
-      if (line === '> [!IMPORTANT]') {
-        expect(depth).toBe(0)
-        alerts++
-      }
-    }
-    expect(depth).toBe(0)
-    expect(alerts).toBe(1)
-    expect(markdown).toMatch(/\n\n> \[!IMPORTANT\]\n> Set `LEGACY`/)
+  test(`${name} nests a readable callout inside its collapsed section`, t => {
+    const dom = new JSDOM(markdown)
+    t.onTestFinished(() => dom.window.close())
+    const notes = dom.window.document.querySelectorAll('details blockquote')
+    expect(notes).toHaveLength(1)
+    const note = notes[0]
+    expect(note.querySelector('strong')?.textContent).toBe('Important')
+    expect(note.querySelector('code')?.textContent).toBe('LEGACY')
+    expect(note.querySelectorAll('p')[1]?.textContent).toBe(
+      'Set LEGACY before the first query when the environment needs compatibility fallbacks.',
+    )
+    const icon = note.querySelector('img')
+    const src =
+      name === 'API'
+        ? '../assets/repo/important.svg'
+        : 'assets/repo/important.svg'
+    expect(icon?.getAttribute('src')).toBe(src)
+    expect(icon?.getAttribute('alt')).toBe('')
+    expect(icon?.getAttribute('width')).toBe('16')
+    expect(icon?.getAttribute('height')).toBe('16')
+    expect(note.querySelector('[style], [class], svg, script')).toBeNull()
+    expect(markdown).not.toContain('[!IMPORTANT]')
   })
 }
 
