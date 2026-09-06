@@ -66,6 +66,23 @@ Add the adapter's `css-tree` peer dependency to `package.json`:
 Run `npm install` or `pnpm install`. jsdom will use nwsapi for queries and stylesheet
 matching. The existing nwsapi factory API and selector support are unchanged.
 
+## Development
+
+Run the development tools with Node.js ≥ 22. This does not change the library's
+runtime support.
+CI runs lint, Node tests, the build and WPT in one Node.js 26 job.
+
+```sh
+npm ci
+npm test
+npm run lint
+npm run min
+```
+
+Node tests need no browser or WPT checkout. See [upstream testing](docs/upstream.md)
+for Chromium setup and known failures. `npm run clean` removes only the generated
+`dist/nwsapi.min.js` bundle.
+
 ## Supported Selectors
 
 Here is a list of all the CSS2/CSS3/CSS4 [Supported selectors](https://github.com/dperini/nwsapi/wiki/CSS-supported-selectors).
