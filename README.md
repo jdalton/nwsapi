@@ -144,12 +144,12 @@ const options = NW.Dom.configure()
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `IDS_DUPES` | `true` | Allows duplicate IDs when finding elements. |
 | `FORGIVING` | `true` | Allows invalid items in forgiving selector lists such as `:is()` and `:where()`. |
-| `LOGERRORS` | `true` | Logs errors when exception throwing is disabled. |
-| `VERBOSITY` | `true` | Throws exceptions for invalid selectors. |
+| `IDS_DUPES` | `true` | Allows duplicate IDs when finding elements. |
 | `LEGACY` | `false` | Enables feature checks and fallbacks for older environments. |
+| `LOGERRORS` | `true` | Logs errors when exception throwing is disabled. |
 | `NODE_LIST` | `false` | Uses NodeList-style results instead of arrays where supported. |
+| `VERBOSITY` | `true` | Throws exceptions for invalid selectors. |
 
 Set `LEGACY` before the first query when the environment needs compatibility fallbacks.
 
