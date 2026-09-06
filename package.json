@@ -5,7 +5,6 @@
   "homepage": "https://javascript.nwbox.com/nwsapi/",
   "main": "./src/nwsapi",
   "files": [
-    "dist/lint.log",
     "dist/nwsapi.min.js",
     "src/**/*.js"
   ],

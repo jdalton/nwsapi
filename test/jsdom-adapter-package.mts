@@ -53,7 +53,6 @@ try {
     [
       'LICENSE',
       'README.md',
-      'dist/lint.log',
       'dist/nwsapi.min.js',
       'package.json',
       'src/dom-selector.js',
