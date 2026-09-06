@@ -39,6 +39,9 @@
   root = doc.documentElement,
   slice = Array.prototype.slice,
 
+  // Factory fallback for documents without a window.
+  ELEMENT_PROTO = global.Element && global.Element.prototype,
+
   HSP = '\\x20\\t',
   VSP = '\\r\\n\\f',
   WSP = '[' + HSP + VSP + ']',
@@ -800,26 +803,72 @@
       return false;
     },
 
+  // Called during document setup only when legacy mode needs an alias.
+  legacyMatcher =
+    function(proto) {
+      return proto && (proto.webkitMatchesSelector ||
+        proto.mozMatchesSelector || proto.msMatchesSelector);
+    },
+
   // use the native selector state when it is available; when NWSAPI has
   // installed itself, _matches retains the native implementation
   matchesNative =
     function(node, selector) {
-      // A host such as jsdom can delegate matches() back to this engine.
-      if (matchingNative) return false;
-      var matcher = _matches || node.matches || node.webkitMatchesSelector ||
-        node.mozMatchesSelector || node.msMatchesSelector;
-      if (!matcher) return false;
+      var view, proto, matcher, ownerDoc = node.ownerDocument || doc;
+      // Record delegation before doing any lookup. Nested calls must not
+      // replace the document record belonging to the outer matcher.
+      if (matchingNative) { matchingNative.delegates = true; return false; }
+      if (ownerDoc !== matcherDoc) {
+        if (matcherCache === null) { matcherCache = createWeakMap(); }
+        matcherDoc = ownerDoc;
+        matcherRecord = matcherCache && matcherCache.get(ownerDoc);
+        if (!matcherRecord) {
+          matcherRecord = {
+            fallback: null,
+            matcher: undefined,
+            delegates: false
+          };
+          if (matcherCache) { matcherCache.set(ownerDoc, matcherRecord); }
+        }
+      }
+      // Host methods can change after setup, including element overrides.
+      // Retain delegation only while the selected function stays the same.
+      matcher = _matches ||
+        ((ownerDoc.defaultView || Object.prototype.hasOwnProperty.call(node, 'matches')) && node.matches) ||
+        (ELEMENT_PROTO && ELEMENT_PROTO.matches);
+      if (!matcher && Config.LEGACY) {
+        if (matcherRecord.fallback === null) {
+          view = ownerDoc.defaultView;
+          proto = view && view.Element && view.Element.prototype;
+          matcherRecord.fallback = legacyMatcher(proto) ||
+            (proto !== ELEMENT_PROTO ? legacyMatcher(ELEMENT_PROTO) : undefined);
+        }
+        matcher = matcherRecord.fallback;
+      }
+      if (matcher !== matcherRecord.matcher) {
+        matcherRecord.matcher = matcher;
+        matcherRecord.delegates = false;
+      }
+      if (!matcher || matcherRecord.delegates) { return false; }
       try {
-        matchingNative = true;
+        matchingNative = matcherRecord;
         return matcher.call(node, selector);
       } catch (e) {
         return false;
       } finally {
-        matchingNative = false;
+        matchingNative = null;
       }
     },
 
-  matchingNative = false,
+  // The active record is marked directly on re-entry, even if the host throws.
+  matchingNative = null,
+
+  // Consecutive queries avoid a WeakMap lookup. Retain other documents weakly
+  // so switching realms does not repeat delegation detection. Allocate after
+  // legacy configuration, on first use; undefined selects the bounded fallback.
+  matcherDoc = null,
+  matcherRecord = null,
+  matcherCache = null,
 
   // :open and :closed have a portable DOM state for details and dialog.
   // Native matching extends support to host-language states such as pickers.
@@ -892,6 +941,9 @@
       for (var i in option) {
         // Compiled logical selectors capture the forgiving mode.
         if (i == 'FORGIVING' && Config[i] !== !!option[i]) { clear = true; }
+        if (i == 'LEGACY' && Config[i] !== !!option[i]) {
+          matcherDoc = matcherCache = null;
+        }
         Config[i] = !!option[i];
       }
       // clear lambda cache
