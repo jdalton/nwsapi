@@ -1,6 +1,7 @@
 import { checkCode } from './check.mts'
 import {
   API_SCRIPT_PATH,
+  SVG_CHECK_SCRIPT_PATH,
   FORMAT_SCRIPT_PATH,
   LINT_SCRIPT_PATH,
 } from './lib/paths.mts'
@@ -15,6 +16,7 @@ export function fixCode(run = runNode) {
   }
   run(FORMAT_SCRIPT_PATH, [])
   run(API_SCRIPT_PATH, [])
+  run(SVG_CHECK_SCRIPT_PATH, ['--fix'])
   checkCode(run)
 }
 

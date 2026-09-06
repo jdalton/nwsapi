@@ -3,6 +3,11 @@ import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 export const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url))
+export const IMPORTANT_ICON_REL_PATH = 'assets/repo/important.svg'
+export const SVG_CHECK_SCRIPT_PATH = path.join(
+  REPO_ROOT,
+  'scripts/check/svgs-are-optimized.mts',
+)
 export const API_DOC_PATH = path.join(REPO_ROOT, 'docs/api.md')
 export const API_SCRIPT_PATH = path.join(REPO_ROOT, 'scripts/gen/api-md.mts')
 export const ENGINE_SOURCE_PATH = path.join(REPO_ROOT, 'src/nwsapi.mts')

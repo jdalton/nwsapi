@@ -58,6 +58,7 @@
     "oxlint-tsgolint": "catalog:",
     "rolldown": "catalog:",
     "taze": "catalog:",
+    "svgo": "catalog:",
     "run-local-ci": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
@@ -89,6 +90,8 @@
     }
   },
   "scripts": {
+    "check:svg": "node scripts/run.mts scripts/check/svgs-are-optimized.mts",
+    "fix:svg": "node scripts/run.mts scripts/check/svgs-are-optimized.mts --fix",
     "gen:api": "node scripts/run.mts scripts/gen/api-md.mts",
     "check:api": "node scripts/run.mts scripts/gen/api-md.mts --check",
     "check": "node scripts/run.mts scripts/check.mts",

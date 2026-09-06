@@ -7,6 +7,7 @@ import { toolVersions } from '../scripts/external-tools.mts'
 import { collectPackumentFailures } from '../scripts/lib/taze-output.mts'
 import {
   API_SCRIPT_PATH,
+  SVG_CHECK_SCRIPT_PATH,
   FORMAT_SCRIPT_PATH,
   LINT_SCRIPT_PATH,
   PLAYWRIGHT_CLI_PATH,
@@ -63,6 +64,7 @@ test('check runs formatting, lint, and types without fix flags', () => {
   checkCode(run)
   expect(calls).toEqual([
     [API_SCRIPT_PATH, ['--check']],
+    [SVG_CHECK_SCRIPT_PATH, []],
     [FORMAT_SCRIPT_PATH, ['--check']],
     [LINT_SCRIPT_PATH, []],
     [TSC_CLI_PATH, ['--noEmit', '-p', TSC_CONFIG_PATH]],
@@ -73,12 +75,13 @@ test('fix formats after lint fixes and verifies the result', () => {
   const { calls, run } = recorder()
   fixCode((entry, args = []) => {
     run(entry, args)
-    if (args.includes('--fix')) {
+    if (entry === LINT_SCRIPT_PATH && args.includes('--fix')) {
       throw new Error('remaining formatting')
     }
   })
   expect(calls[0]).toEqual([LINT_SCRIPT_PATH, ['--fix']])
   expect(calls[1]).toEqual([FORMAT_SCRIPT_PATH, []])
+  expect(calls).toContainEqual([SVG_CHECK_SCRIPT_PATH, ['--fix']])
   expect(calls.at(-1)).toEqual([
     TSC_CLI_PATH,
     ['--noEmit', '-p', TSC_CONFIG_PATH],
