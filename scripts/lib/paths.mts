@@ -3,6 +3,14 @@ import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 export const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url))
+export const API_DOC_PATH = path.join(REPO_ROOT, 'docs/api.md')
+export const API_SCRIPT_PATH = path.join(REPO_ROOT, 'scripts/gen/api-md.mts')
+export const ENGINE_SOURCE_PATH = path.join(REPO_ROOT, 'src/nwsapi.mts')
+export const ADAPTER_SOURCE_PATH = path.join(REPO_ROOT, 'src/dom-selector.mts')
+export const TRAVERSAL_SOURCE_PATH = path.join(
+  REPO_ROOT,
+  'src/modules/nwsapi-traversal.mts',
+)
 export const UPSTREAM_HELPER_PATH = path.join(
   REPO_ROOT,
   'scripts/git-partial-submodule.mts',

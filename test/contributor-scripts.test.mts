@@ -6,6 +6,7 @@ import { updateArgs, updateDependencies } from '../scripts/update.mts'
 import { toolVersions } from '../scripts/external-tools.mts'
 import { collectPackumentFailures } from '../scripts/lib/taze-output.mts'
 import {
+  API_SCRIPT_PATH,
   FORMAT_SCRIPT_PATH,
   LINT_SCRIPT_PATH,
   PLAYWRIGHT_CLI_PATH,
@@ -61,6 +62,7 @@ test('check runs formatting, lint, and types without fix flags', () => {
   const { calls, run } = recorder()
   checkCode(run)
   expect(calls).toEqual([
+    [API_SCRIPT_PATH, ['--check']],
     [FORMAT_SCRIPT_PATH, ['--check']],
     [LINT_SCRIPT_PATH, []],
     [TSC_CLI_PATH, ['--noEmit', '-p', TSC_CONFIG_PATH]],

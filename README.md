@@ -6,8 +6,8 @@
 NWSAPI finds DOM elements that match CSS selectors. It works in browsers and with DOM libraries in Node.js.
 The core engine has no external dependencies.
 
-NWSAPI builds on [NWMATCHER](https://github.com/dperini/nwmatcher) and aims to support [Selectors Level 4](https://www.w3.org/TR/selectors-4/).
-See the [supported selectors](https://github.com/dperini/nwsapi/wiki/CSS-supported-selectors) and [features](https://github.com/dperini/nwsapi/wiki/Features-and-compliance).
+NWSAPI builds on [NWMATCHER](https://github.com/dperini/nwmatcher) with [Selectors Level 4](https://drafts.csswg.org/selectors-4/) features such as `:is()`, `:where()`, and `:has()`, plus state selectors such as `:open` and `:modal`.
+See the [selector support](https://github.com/dperini/nwsapi/wiki/CSS-supported-selectors) and [compatibility notes](https://github.com/dperini/nwsapi/wiki/Features-and-compliance).
 
 ## Install
 
@@ -108,81 +108,24 @@ NW.Dom.uninstall()
 ## API
 
 Use `NW.Dom` in a browser or the engine returned by the Node.js factory.
-Pass a CSS selector as `selector` and a DOM node as `context`.
+See the [full API reference](docs/api.md) for all methods, options, and adapter APIs.
 
 | Method | Result |
 | --- | --- |
-| <code>ancestor(selector,&nbsp;element)</code> | Returns the nearest match, starting with the element, or `null`. |
-| <code>first(selector,&nbsp;context)</code> | Returns the first matching descendant, or `null`. |
-| <code>match(selector,&nbsp;element)</code> | Returns `true` if the element matches, or `false`. |
-| <code>select(selector,&nbsp;context)</code> | Returns an array of matching descendants, or `[]` if none match. |
-
-These methods accept an optional third argument, `callback`, which runs for matching elements.
+| `closest()` | Returns the nearest match, starting with the element, or `null`. |
+| `first()` | Returns the first matching descendant, or `null`. |
+| `match()` | Returns whether an element matches. |
+| `select()` | Returns an array of matching descendants. |
 
 <details>
-<summary>Find elements by ID, tag, or class</summary>
+<summary>More API options</summary>
 
-Pass the search context as the second argument. These helpers return arrays by default.
-
-```js
-NW.Dom.byClass('item', document)
-NW.Dom.byId('content', document)
-NW.Dom.byTag('p', document)
-```
-
-`byId()` can return multiple elements when the document contains duplicate IDs.
-
-</details>
-
-<details>
-<summary>Configure the engine</summary>
-
-```js
-NW.Dom.configure({ LOGERRORS: false, IDS_DUPES: false })
-const options = NW.Dom.configure()
-```
-
-| Option | Default | Effect |
-| --- | --- | --- |
-| `FORGIVING` | `true` | Allows invalid items in forgiving selector lists such as `:is()` and `:where()`. |
-| `IDS_DUPES` | `true` | Allows duplicate IDs when finding elements. |
-| `LEGACY` | `false` | Enables feature checks and fallbacks for older environments. |
-| `LOGERRORS` | `true` | Logs errors when exception throwing is disabled. |
-| `NODE_LIST` | `false` | Uses NodeList-style results instead of arrays where supported. |
-| `VERBOSITY` | `true` | Throws exceptions for invalid selectors. |
+- [Find elements and add extensions](docs/api.md#engine-methods) with `byClass()`, `byId()`, `byTag()`, and the registration methods.
+- [Configure the engine](docs/api.md#configuration) with `configure()`.
+- [Use the jsdom adapter](docs/api.md#jsdom-adapter) for queries and stylesheet matching.
 
 > [!IMPORTANT]
 > Set `LEGACY` before the first query when the environment needs compatibility fallbacks.
-
-</details>
-
-<details>
-<summary>Add selector extensions</summary>
-
-Extensions use JavaScript source strings to define matching behavior. Register only trusted code.
-
-`registerCombinator(symbol, resolver)` adds a relationship between elements:
-
-```js
-NW.Dom.registerCombinator('^', 'e.parentElement')
-```
-
-`registerOperator(symbol, resolver)` adds an attribute operator:
-
-```js
-NW.Dom.registerOperator('!=', { p1: '^', p2: '$', p3: 'false' })
-```
-
-`registerSelector(name, pattern, compile)` adds a selector. The compile function returns matching code and a success flag.
-
-```js
-NW.Dom.registerSelector('Controls', /^:(control)(.*)/i, (match, source) => ({
-  source: 'if(/^(button|input|select|textarea)$/i.test(e.nodeName)){' + source + '}',
-  status: true,
-}))
-```
-
-The engine compiles selectors into JavaScript functions and caches those functions for later queries.
 
 </details>
 

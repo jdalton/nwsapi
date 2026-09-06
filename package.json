@@ -89,6 +89,8 @@
     }
   },
   "scripts": {
+    "gen:api": "node scripts/run.mts scripts/gen/api-md.mts",
+    "check:api": "node scripts/run.mts scripts/gen/api-md.mts --check",
     "check": "node scripts/run.mts scripts/check.mts",
     "fix": "node scripts/run.mts scripts/fix.mts",
     "update": "node scripts/run.mts scripts/update.mts",

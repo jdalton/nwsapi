@@ -1,5 +1,9 @@
 import { checkCode } from './check.mts'
-import { FORMAT_SCRIPT_PATH, LINT_SCRIPT_PATH } from './lib/paths.mts'
+import {
+  API_SCRIPT_PATH,
+  FORMAT_SCRIPT_PATH,
+  LINT_SCRIPT_PATH,
+} from './lib/paths.mts'
 import { isMainModule, runNode } from './lib/run-node.mts'
 
 export function fixCode(run = runNode) {
@@ -10,6 +14,7 @@ export function fixCode(run = runNode) {
     // The final check reports any errors that formatting does not resolve.
   }
   run(FORMAT_SCRIPT_PATH, [])
+  run(API_SCRIPT_PATH, [])
   checkCode(run)
 }
 

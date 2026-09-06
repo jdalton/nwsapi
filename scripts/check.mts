@@ -1,4 +1,5 @@
 import {
+  API_SCRIPT_PATH,
   FORMAT_SCRIPT_PATH,
   LINT_SCRIPT_PATH,
   TSC_CLI_PATH,
@@ -9,6 +10,7 @@ import { toolVersions } from './external-tools.mts'
 
 export function checkCode(run = runNode) {
   toolVersions()
+  run(API_SCRIPT_PATH, ['--check'])
   run(FORMAT_SCRIPT_PATH, ['--check'])
   run(LINT_SCRIPT_PATH, [])
   run(TSC_CLI_PATH, ['--noEmit', '-p', TSC_CONFIG_PATH])
