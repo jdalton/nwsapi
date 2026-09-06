@@ -1,12 +1,26 @@
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import {
+  foreignPackageManagerMessage,
+  invokedByForeignPackageManager,
+  invokingPackageManager,
+} from './lib/package-manager.mts'
+import {
   COMPILE_CACHE_DIR,
   COVERAGE_SCRIPT_PATH,
   REPO_ROOT,
 } from './lib/paths.mts'
 
 const [entry, ...args] = process.argv.slice(2)
+if (invokedByForeignPackageManager()) {
+  console.error(
+    foreignPackageManagerMessage(
+      invokingPackageManager(),
+      process.env.npm_lifecycle_event,
+    ),
+  )
+  process.exit(1)
+}
 if (!entry) {
   throw new Error('Usage: node scripts/run.mts <entry> [arguments]')
 }
