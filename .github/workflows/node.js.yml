@@ -24,8 +24,9 @@ jobs:
       - run: pnpm run format:check
       - run: pnpm run type
       - run: pnpm run test:package
-      - run: pnpm run upstream:clone
-      - run: pnpm run upstream:verify
+      # Use real Git for upstream repositories, not the local runner's checkout shim.
+      - run: PATH="$(git --exec-path):$PATH" pnpm run upstream:clone
+      - run: PATH="$(git --exec-path):$PATH" pnpm run upstream:verify
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run test:coverage
       - run: pnpm run check:coverage

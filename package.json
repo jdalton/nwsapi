@@ -57,6 +57,7 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "rolldown": "catalog:",
+    "run-local-ci": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
@@ -86,6 +87,7 @@
     }
   },
   "scripts": {
+    "ci:local": "local-ci run --workflow .github/workflows/node.js.yml --quiet --pause-on-failure --github-token",
     "clean": "node scripts/clean.mts",
     "lint": "node scripts/lint.mts",
     "format": "oxfmt --config .config/oxfmt.json scripts test/*.test.mts test/jsdom-adapter-package.mts test/upstream/*.mts .config/*.mts .config/*.d.ts",

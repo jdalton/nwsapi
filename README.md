@@ -103,6 +103,9 @@ Runtime source is not reformatted.
 Oxlint also checks types. Coverage enforces the aggregate minimums in
 `.config/coverage.config.mts`; HTML reports are generated only in CI.
 
+Run `pnpm run ci:local` before pushing to test the GitHub Actions workflows locally.
+It needs Docker and GitHub CLI authentication, and pauses on failures for fixes.
+
 Node tests need no browser or WPT checkout. See [upstream testing](docs/upstream.md)
 for Chromium setup and known failures. `pnpm run clean` removes generated JavaScript.
 

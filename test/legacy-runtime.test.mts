@@ -16,6 +16,14 @@ const instrumented = source.replace(
   'Dom.testCreateWeakMap = function() { return createWeakMap(); }; return Dom;',
 )
 
+type TestFactory = (host: {
+  document: ReturnType<typeof documentStub>
+  DOMException: typeof Error
+}) => {
+  configure(option: string | { LEGACY: boolean }): boolean
+  testCreateWeakMap(): WeakMap<object, unknown> | undefined
+}
+
 function documentStub() {
   const document = {
     nodeType: 9,
@@ -69,7 +77,7 @@ for (const [name, value, legacy, available] of [
     })
     vm.runInNewContext(instrumented, context)
     const document = documentStub()
-    const nw = (context.module.exports as typeof import('../src/nwsapi.js'))({
+    const nw = (context.module.exports as TestFactory)({
       document,
       DOMException: Error,
     })

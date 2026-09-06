@@ -1,5 +1,8 @@
 allowBuilds:
+  cpu-features: false
   fsevents: false
+  protobufjs: false
+  ssh2: false
 blockExoticSubdeps: true
 catalog:
   "@playwright/test": "1.62.1"
@@ -17,6 +20,7 @@ catalog:
   "oxlint": "1.81.0"
   "oxlint-tsgolint": "7.0.2001"
   "rolldown": "1.2.7"
+  "run-local-ci": "0.18.1"
   "typescript": "7.0.2"
   "vite": "8.2.2"
   "vitest": "5.0.0"
